@@ -1,0 +1,53 @@
+import { Client } from '@microsoft/microsoft-graph-client';
+import { auth } from '@clerk/nextjs';
+import { NextResponse } from 'next/server';
+
+export async function GET(request: Request) {
+  try {
+    const { userId } = auth();
+    if (!userId) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    const client = Client.init({
+      authProvider: (done) => {
+        done(null, process.env.MICROSOFT_ACCESS_TOKEN);
+      }
+    });
+
+    const items = await client
+      .api('/me/drive/root/children')
+      .get();
+
+    return NextResponse.json(items);
+  } catch (error) {
+    console.error('OneDrive API Error:', error);
+    return new NextResponse("Internal Server Error", { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const { userId } = auth();
+    if (!userId) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    const { itemId } = await request.json();
+
+    const client = Client.init({
+      authProvider: (done) => {
+        done(null, process.env.MICROSOFT_ACCESS_TOKEN);
+      }
+    });
+
+    const item = await client
+      .api(`/me/drive/items/${itemId}`)
+      .get();
+
+    return NextResponse.json(item);
+  } catch (error) {
+    console.error('OneDrive API Error:', error);
+    return new NextResponse("Internal Server Error", { status: 500 });
+  }
+}

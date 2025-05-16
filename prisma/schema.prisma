@@ -1,0 +1,210 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  name          String?
+  email         String?        @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  coins         Int            @default(0)
+  habits        Habit[]
+  rewards       Reward[]
+  golfRounds    GolfRound[]
+  golfTips      GolfTip[]
+  practiceLog   PracticeLog[]
+  musicSkills   MusicSkill[]
+  musicGoals    MusicGoal[]
+  recordings    Recording[]
+  cards         Card[]
+  keywords      Keyword[]
+  attachments   Attachment[]
+  factSources   FactSource[]
+}
+
+model Card {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  status      String
+  userId      String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  keywords    Keyword[]
+  attachments Attachment[]
+  factSources FactSource[]
+}
+
+model Keyword {
+  id     String @id @default(cuid())
+  name   String
+  userId String
+  cardId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card   Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+}
+
+model Attachment {
+  id        String   @id @default(cuid())
+  name      String
+  url       String
+  fileType  String
+  provider  String
+  cardId    String
+  userId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+}
+
+model FactSource {
+  id         String   @id @default(cuid())
+  title      String
+  url        String?
+  quote      String?
+  screenshot String?
+  cardId     String
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card       Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+}
+
+model Habit {
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  priority    Priority      @default(OPTIONAL)
+  coins       Int           @default(10)
+  userId      String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  location    String?
+  timeOfDay   DateTime?
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  completions Completion[]
+}
+
+model Completion {
+  id        String   @id @default(cuid())
+  habitId   String
+  date      DateTime @default(now())
+  habit     Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+}
+
+model Reward {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  cost        Int
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model GolfRound {
+  id          String     @id @default(cuid())
+  userId      String
+  courseName  String
+  date        DateTime
+  totalScore  Int
+  totalPutts  Int
+  fairwaysHit Int
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  holes       GolfHole[]
+}
+
+model GolfHole {
+  id         String    @id @default(cuid())
+  roundId    String
+  holeNumber Int
+  par        Int
+  strokes    Int
+  putts      Int
+  fairwayHit Boolean
+  round      GolfRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
+
+  @@unique([roundId, holeNumber])
+}
+
+model GolfTip {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  content   String
+  date      DateTime @default(now())
+  tags      String[]
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PracticeLog {
+  id        String   @id @default(cuid())
+  userId    String
+  duration  Int      // Duration in minutes
+  date      DateTime @default(now())
+  notes     String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MusicSkill {
+  id        String      @id @default(cuid())
+  userId    String
+  name      String
+  type      SkillType
+  status    SkillStatus
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MusicGoal {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  description String?
+  dueDate     DateTime
+  completed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Recording {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  url       String
+  duration  Int      // Duration in seconds
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum Priority {
+  CRITICAL
+  IMPORTANT
+  OPTIONAL
+}
+
+enum SkillType {
+  CHORD
+  SCALE
+  TECHNIQUE
+}
+
+enum SkillStatus {
+  TO_LEARN
+  IN_PROGRESS
+  MASTERED
+}
