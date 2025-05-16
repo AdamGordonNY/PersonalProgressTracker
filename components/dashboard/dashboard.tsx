@@ -1,21 +1,22 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { DashboardHeader } from '@/components/dashboard/dashboard-header';
-import { KanbanBoard } from '@/components/dashboard/kanban-board';
-import { Sidebar } from '@/components/dashboard/sidebar';
-import { TimeGuardian } from '@/components/time-guardian/time-guardian';
-import { FocusFortress } from '@/components/focus-fortress/focus-fortress';
-import { useToast } from '@/hooks/use-toast';
-import { Spinner } from '@/components/ui/spinner';
-import { Card } from '@/lib/types';
+import { useState, useEffect } from "react";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { KanbanBoard } from "@/components/dashboard/kanban-board";
+import { Sidebar } from "@/components/dashboard/sidebar";
+import { TimeGuardian } from "@/components/time-guardian/time-guardian";
+import { FocusFortress } from "@/components/focus-fortress/focus-fortress";
+import { useToast } from "@/hooks/use-toast";
+import { Spinner } from "@/components/ui/spinner";
+import { Card } from "@/lib/types";
 
 // Sample data for demo purposes
 const SAMPLE_CARDS: Card[] = [
   {
     id: "1",
     title: "Social Media Trends 2025",
-    description: "Research on emerging social media platforms and user behaviors.",
+    description:
+      "Research on emerging social media platforms and user behaviors.",
     status: "Ideas",
     keywords: [
       { id: "1", name: "Research" },
@@ -41,13 +42,16 @@ const SAMPLE_CARDS: Card[] = [
         url: "https://climate.nasa.gov/",
         quote: "Global temperatures continue to rise at an unprecedented rate.",
         screenshot: null,
-      }
+        cardId: "1",
+      },
     ],
   },
   {
     id: "3",
+
     title: "AI Ethics Series",
-    description: "Video series exploring ethical considerations in AI development.",
+    description:
+      "Video series exploring ethical considerations in AI development.",
     status: "Ideas",
     keywords: [
       { id: "4", name: "Educational" },
@@ -59,7 +63,8 @@ const SAMPLE_CARDS: Card[] = [
   {
     id: "4",
     title: "Sustainable Fashion Guide",
-    description: "Guide for sustainable fashion choices and industry practices.",
+    description:
+      "Guide for sustainable fashion choices and industry practices.",
     status: "Scripting",
     keywords: [
       { id: "6", name: "Fashion" },
@@ -72,14 +77,17 @@ const SAMPLE_CARDS: Card[] = [
         url: "#",
         fileType: "pdf",
         provider: "GoogleDrive",
-      }
+        cardId: "3",
+        createdAt: new Date(),
+      },
     ],
     factSources: [],
   },
   {
     id: "5",
     title: "Remote Work Productivity Tips",
-    description: "Video with practical tips for staying productive while working remotely.",
+    description:
+      "Video with practical tips for staying productive while working remotely.",
     status: "Recording",
     keywords: [
       { id: "8", name: "Productivity" },
@@ -118,15 +126,20 @@ export default function Dashboard({ userId }: { userId: string }) {
 
   // Filter cards based on keyword
   const filteredCards = filterKeyword
-    ? cards.filter(card =>
-        card.keywords.some(keyword => keyword.name.toLowerCase() === filterKeyword.toLowerCase())
+    ? cards.filter((card) =>
+        card.keywords.some(
+          (keyword) =>
+            keyword.name.toLowerCase() === filterKeyword.toLowerCase()
+        )
       )
     : cards;
 
   const handleCardStatusChange = (cardId: string, newStatus: string) => {
-    setCards(cards.map(card => 
-      card.id === cardId ? { ...card, status: newStatus } : card
-    ));
+    setCards(
+      cards.map((card) =>
+        card.id === cardId ? { ...card, status: newStatus } : card
+      )
+    );
 
     toast({
       title: "Card Updated",
@@ -136,7 +149,7 @@ export default function Dashboard({ userId }: { userId: string }) {
 
   const handleAddCard = (newCard: Card) => {
     setCards([...cards, newCard]);
-    
+
     toast({
       title: "Card Created",
       description: "New content card has been created",
@@ -144,10 +157,10 @@ export default function Dashboard({ userId }: { userId: string }) {
   };
 
   const handleUpdateCard = (updatedCard: Card) => {
-    setCards(cards.map(card => 
-      card.id === updatedCard.id ? updatedCard : card
-    ));
-    
+    setCards(
+      cards.map((card) => (card.id === updatedCard.id ? updatedCard : card))
+    );
+
     toast({
       title: "Card Updated",
       description: "Content card has been updated",
@@ -155,8 +168,8 @@ export default function Dashboard({ userId }: { userId: string }) {
   };
 
   const handleDeleteCard = (cardId: string) => {
-    setCards(cards.filter(card => card.id !== cardId));
-    
+    setCards(cards.filter((card) => card.id !== cardId));
+
     toast({
       title: "Card Deleted",
       description: "Content card has been deleted",
@@ -174,8 +187,8 @@ export default function Dashboard({ userId }: { userId: string }) {
 
   return (
     <div className="flex h-screen bg-muted/20">
-      <Sidebar 
-        onFilterByKeyword={setFilterKeyword} 
+      <Sidebar
+        onFilterByKeyword={setFilterKeyword}
         activeFilter={filterKeyword}
         cards={cards}
       />

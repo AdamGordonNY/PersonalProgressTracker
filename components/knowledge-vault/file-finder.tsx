@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Loader2, X, FileText, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Card } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Loader2, X, FileText, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Card } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 
 interface FileScanResult {
   provider: string;
   filesFound: number;
-  status: 'scanning' | 'complete';
+  status: "scanning" | "complete";
 }
 
 interface FileFinder {
@@ -19,9 +19,15 @@ interface FileFinder {
 }
 
 export function FileFinder({ onClose }: FileFinder) {
-  const [scanResults, setScanResults] = useState<Record<string, FileScanResult>>({
-    GoogleDrive: { provider: 'Google Drive', filesFound: 0, status: 'scanning' },
-    OneDrive: { provider: 'OneDrive', filesFound: 0, status: 'scanning' },
+  const [scanResults, setScanResults] = useState<
+    Record<string, FileScanResult>
+  >({
+    GoogleDrive: {
+      provider: "Google Drive",
+      filesFound: 0,
+      status: "scanning",
+    },
+    OneDrive: { provider: "OneDrive", filesFound: 0, status: "scanning" },
   });
   const [progress, setProgress] = useState(0);
   const { toast } = useToast();
@@ -29,7 +35,7 @@ export function FileFinder({ onClose }: FileFinder) {
   useEffect(() => {
     // Simulate scanning process
     const interval = setInterval(() => {
-      setProgress(prev => {
+      setProgress((prev) => {
         if (prev >= 100) {
           clearInterval(interval);
           return 100;
@@ -38,27 +44,29 @@ export function FileFinder({ onClose }: FileFinder) {
       });
 
       // Simulate finding files
-      setScanResults(prev => {
+      setScanResults((prev) => {
         if (progress < 50) {
           return {
-            ...prev,
             GoogleDrive: {
               ...prev.GoogleDrive,
-              filesFound: Math.floor(Math.random() * 5) + prev.GoogleDrive.filesFound,
+              filesFound:
+                Math.floor(Math.random() * 5) + prev.GoogleDrive.filesFound,
             },
+            OneDrive: prev.OneDrive,
           };
         } else if (progress < 100) {
           return {
-            ...prev,
+            GoogleDrive: prev.GoogleDrive,
             OneDrive: {
               ...prev.OneDrive,
-              filesFound: Math.floor(Math.random() * 3) + prev.OneDrive.filesFound,
+              filesFound:
+                Math.floor(Math.random() * 3) + prev.OneDrive.filesFound,
             },
           };
         } else {
           return {
-            GoogleDrive: { ...prev.GoogleDrive, status: 'complete' },
-            OneDrive: { ...prev.OneDrive, status: 'complete' },
+            GoogleDrive: { ...prev.GoogleDrive, status: "complete" },
+            OneDrive: { ...prev.OneDrive, status: "complete" },
           };
         }
       });
@@ -70,7 +78,9 @@ export function FileFinder({ onClose }: FileFinder) {
   const handleImport = () => {
     toast({
       title: "Files Imported",
-      description: `${scanResults.GoogleDrive.filesFound + scanResults.OneDrive.filesFound} files have been added to your Knowledge Vault.`,
+      description: `${
+        scanResults.GoogleDrive.filesFound + scanResults.OneDrive.filesFound
+      } files have been added to your Knowledge Vault.`,
     });
     onClose();
   };
@@ -124,7 +134,7 @@ export function FileFinder({ onClose }: FileFinder) {
                     </p>
                   </div>
                 </div>
-                {result.status === 'scanning' ? (
+                {result.status === "scanning" ? (
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 ) : (
                   <Check className="h-5 w-5 text-green-500" />
@@ -148,7 +158,7 @@ export function FileFinder({ onClose }: FileFinder) {
                   Scanning...
                 </>
               ) : (
-                'Import Files'
+                "Import Files"
               )}
             </Button>
           </div>

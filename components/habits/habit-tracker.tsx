@@ -1,19 +1,20 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Award, Target, Clock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { HabitList } from '@/components/habits/habit-list';
-import { AddHabitDialog } from '@/components/habits/add-habit-dialog';
-import { RewardsShop } from '@/components/habits/rewards-shop';
-import { PriorityPyramid } from '@/components/habits/priority-pyramid';
+import { useState, useEffect } from "react";
+
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, Award, Target, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { HabitList } from "@/components/habits/habit-list";
+import { AddHabitDialog } from "@/components/habits/add-habit-dialog";
+import { RewardsShop } from "@/components/habits/rewards-shop";
+import { PriorityPyramid } from "@/components/habits/priority-pyramid";
+import { useSession } from "@clerk/nextjs";
 
 export function HabitTracker() {
-  const { data: session } = useSession();
+  const session = useSession();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showRewardsShop, setShowRewardsShop] = useState(false);
   const [coins, setCoins] = useState(0);
@@ -33,7 +34,9 @@ export function HabitTracker() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Habit Tracker</h1>
-          <p className="text-muted-foreground">Build better habits, earn rewards</p>
+          <p className="text-muted-foreground">
+            Build better habits, earn rewards
+          </p>
         </div>
         <div className="flex items-center gap-4">
           <Button
@@ -80,7 +83,7 @@ export function HabitTracker() {
               <div
                 key={i}
                 className={`h-2 flex-1 rounded-full ${
-                  i < streak ? 'bg-amber-500' : 'bg-muted'
+                  i < streak ? "bg-amber-500" : "bg-muted"
                 }`}
               />
             ))}
@@ -112,10 +115,7 @@ export function HabitTracker() {
         </div>
       </div>
 
-      <AddHabitDialog
-        open={showAddDialog}
-        onOpenChange={setShowAddDialog}
-      />
+      <AddHabitDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
 
       <AnimatePresence>
         {showRewardsShop && (

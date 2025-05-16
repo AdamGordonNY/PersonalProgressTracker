@@ -1,12 +1,12 @@
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { FileText, Layers, CheckSquare, Clock } from "lucide-react";
 
 export default async function Home() {
-  const { userId } = auth();
-  
+  const { userId } = await auth();
+
   if (userId) {
     redirect("/dashboard");
   }
@@ -38,7 +38,8 @@ export default async function Home() {
                   Streamline Your Content Creation Workflow
                 </h1>
                 <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                  Organize, track, and optimize your content production with our intuitive Kanban dashboard built for content creators.
+                  Organize, track, and optimize your content production with our
+                  intuitive Kanban dashboard built for content creators.
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
@@ -66,7 +67,9 @@ export default async function Home() {
                     </div>
                     <div className="space-y-2">
                       <div className="rounded-md border bg-white p-3 shadow-sm">
-                        <h4 className="font-medium">Social Media Trends 2025</h4>
+                        <h4 className="font-medium">
+                          Social Media Trends 2025
+                        </h4>
                         <div className="mt-2 flex flex-wrap gap-1">
                           <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-800">
                             Research
@@ -94,7 +97,9 @@ export default async function Home() {
                       </span>
                     </div>
                     <div className="rounded-md border bg-white p-3 shadow-sm">
-                      <h4 className="font-medium">Climate Change Documentary</h4>
+                      <h4 className="font-medium">
+                        Climate Change Documentary
+                      </h4>
                       <div className="mt-2 flex flex-wrap gap-1">
                         <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800">
                           Environment
@@ -123,14 +128,16 @@ export default async function Home() {
               <Clock className="h-10 w-10 text-sage-600" />
               <h3 className="text-xl font-bold">Save Time</h3>
               <p className="text-muted-foreground">
-                Keep all your research, scripts, and files organized in one place
+                Keep all your research, scripts, and files organized in one
+                place
               </p>
             </div>
             <div className="flex flex-col items-center space-y-2 rounded-lg border p-6 text-center shadow-sm">
               <CheckSquare className="h-10 w-10 text-sage-600" />
               <h3 className="text-xl font-bold">Fact-Check Hub</h3>
               <p className="text-muted-foreground">
-                Verify sources and maintain accuracy with integrated fact-checking tools
+                Verify sources and maintain accuracy with integrated
+                fact-checking tools
               </p>
             </div>
           </div>
@@ -144,16 +151,28 @@ export default async function Home() {
               <span className="text-lg font-semibold">ContentBoard</span>
             </div>
             <nav className="hidden gap-4 sm:flex">
-              <Link href="#" className="text-sm text-muted-foreground hover:underline">
+              <Link
+                href="#"
+                className="text-sm text-muted-foreground hover:underline"
+              >
                 Features
               </Link>
-              <Link href="#" className="text-sm text-muted-foreground hover:underline">
+              <Link
+                href="#"
+                className="text-sm text-muted-foreground hover:underline"
+              >
                 Pricing
               </Link>
-              <Link href="#" className="text-sm text-muted-foreground hover:underline">
+              <Link
+                href="#"
+                className="text-sm text-muted-foreground hover:underline"
+              >
                 About
               </Link>
-              <Link href="#" className="text-sm text-muted-foreground hover:underline">
+              <Link
+                href="#"
+                className="text-sm text-muted-foreground hover:underline"
+              >
                 Contact
               </Link>
             </nav>
@@ -163,10 +182,16 @@ export default async function Home() {
               © 2025 ContentBoard. All rights reserved.
             </p>
             <nav className="flex gap-4">
-              <Link href="#" className="text-xs text-muted-foreground hover:underline">
+              <Link
+                href="#"
+                className="text-xs text-muted-foreground hover:underline"
+              >
                 Terms
               </Link>
-              <Link href="#" className="text-xs text-muted-foreground hover:underline">
+              <Link
+                href="#"
+                className="text-xs text-muted-foreground hover:underline"
+              >
                 Privacy
               </Link>
             </nav>

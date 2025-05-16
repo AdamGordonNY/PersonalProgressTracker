@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,7 +34,13 @@ interface CardDialogProps {
   onDeleteCard: (cardId: string) => void;
 }
 
-export function CardDialog({ card, open, onOpenChange, onUpdateCard, onDeleteCard }: CardDialogProps) {
+export function CardDialog({
+  card,
+  open,
+  onOpenChange,
+  onUpdateCard,
+  onDeleteCard,
+}: CardDialogProps) {
   const [editedCard, setEditedCard] = useState<Card>({ ...card });
   const [newKeyword, setNewKeyword] = useState("");
   const [newSource, setNewSource] = useState<Partial<FactSource>>({
@@ -163,10 +174,16 @@ export function CardDialog({ card, open, onOpenChange, onUpdateCard, onDeleteCar
               <TabsTrigger value="details" className="flex items-center gap-1">
                 <Info className="h-4 w-4" /> Details
               </TabsTrigger>
-              <TabsTrigger value="resources" className="flex items-center gap-1">
+              <TabsTrigger
+                value="resources"
+                className="flex items-center gap-1"
+              >
                 <FileText className="h-4 w-4" /> Resources
               </TabsTrigger>
-              <TabsTrigger value="fact-check" className="flex items-center gap-1">
+              <TabsTrigger
+                value="fact-check"
+                className="flex items-center gap-1"
+              >
                 <Link className="h-4 w-4" /> Fact Check
               </TabsTrigger>
             </TabsList>
@@ -177,7 +194,10 @@ export function CardDialog({ card, open, onOpenChange, onUpdateCard, onDeleteCar
                 <Textarea
                   value={editedCard.description || ""}
                   onChange={(e) =>
-                    setEditedCard({ ...editedCard, description: e.target.value })
+                    setEditedCard({
+                      ...editedCard,
+                      description: e.target.value,
+                    })
                   }
                   className="mt-1 min-h-[200px]"
                   placeholder="Add detailed notes, script ideas, and other information about this content..."
@@ -235,7 +255,7 @@ export function CardDialog({ card, open, onOpenChange, onUpdateCard, onDeleteCar
                 <div className="mb-4 flex items-center justify-between">
                   <Label className="text-lg font-medium">Attachments</Label>
                 </div>
-                
+
                 <div className="space-y-2">
                   {editedCard.attachments.map((attachment) => (
                     <div
@@ -245,22 +265,44 @@ export function CardDialog({ card, open, onOpenChange, onUpdateCard, onDeleteCar
                       <div className="flex items-center gap-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
                           {attachment.fileType === "pdf" ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                              <polyline points="14 2 14 8 20 8"/>
-                              <path d="M9 15h6"/>
-                              <path d="M9 11h6"/>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                              <polyline points="14 2 14 8 20 8" />
+                              <path d="M9 15h6" />
+                              <path d="M9 11h6" />
                             </svg>
                           ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M21 15V6m0 0H2v13h10"/>
-                              <circle cx="16" cy="16" r="3"/>
-                              <circle cx="8" cy="6" r="2"/>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M21 15V6m0 0H2v13h10" />
+                              <circle cx="16" cy="16" r="3" />
+                              <circle cx="8" cy="6" r="2" />
                             </svg>
                           )}
                         </div>
                         <div>
-                          <p className="text-sm font-medium">{attachment.name}</p>
+                          <p className="text-sm font-medium">
+                            {attachment.name}
+                          </p>
                           <p className="text-xs text-muted-foreground">
                             {attachment.provider}
                           </p>
@@ -361,13 +403,10 @@ export function CardDialog({ card, open, onOpenChange, onUpdateCard, onDeleteCar
                 <div className="mb-4 flex items-center justify-between">
                   <Label className="text-lg font-medium">Fact-Check Hub</Label>
                 </div>
-                
+
                 <div className="space-y-2">
                   {editedCard.factSources.map((source) => (
-                    <div
-                      key={source.id}
-                      className="rounded-md border p-3"
-                    >
+                    <div key={source.id} className="rounded-md border p-3">
                       <div className="flex items-center justify-between">
                         <h4 className="font-medium">{source.title}</h4>
                         <Button
@@ -393,7 +432,7 @@ export function CardDialog({ card, open, onOpenChange, onUpdateCard, onDeleteCar
                       )}
                       {source.quote && (
                         <div className="mt-2 rounded-md bg-muted p-2 text-sm italic">
-                          "{source.quote}"
+                          &quot;{source.quote}&quot;
                         </div>
                       )}
                     </div>
@@ -417,14 +456,14 @@ export function CardDialog({ card, open, onOpenChange, onUpdateCard, onDeleteCar
                       />
                       <Input
                         placeholder="URL (optional)"
-                        value={newSource.url}
+                        value={newSource.url!}
                         onChange={(e) =>
                           setNewSource({ ...newSource, url: e.target.value })
                         }
                       />
                       <Textarea
                         placeholder="Relevant quote (optional)"
-                        value={newSource.quote}
+                        value={newSource.quote!}
                         onChange={(e) =>
                           setNewSource({ ...newSource, quote: e.target.value })
                         }
@@ -456,7 +495,12 @@ export function CardDialog({ card, open, onOpenChange, onUpdateCard, onDeleteCar
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleSave} className="bg-sage-600 hover:bg-sage-700">Save Changes</Button>
+              <Button
+                onClick={handleSave}
+                className="bg-sage-600 hover:bg-sage-700"
+              >
+                Save Changes
+              </Button>
             </div>
           </div>
         </DialogContent>
@@ -467,13 +511,16 @@ export function CardDialog({ card, open, onOpenChange, onUpdateCard, onDeleteCar
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this content card and all associated data.
-              This action cannot be undone.
+              This will permanently delete this content card and all associated
+              data. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -1,15 +1,18 @@
 "use client";
 
-import { motion } from 'framer-motion';
-import { RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { motion } from "framer-motion";
+import { RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface TimeGuardianWarningProps {
   onClose: () => void;
   onReset: () => void;
 }
 
-export function TimeGuardianWarning({ onClose, onReset }: TimeGuardianWarningProps) {
+export function TimeGuardianWarning({
+  onClose,
+  onReset,
+}: TimeGuardianWarningProps) {
   const handleReset = () => {
     onReset();
     onClose();
@@ -52,7 +55,7 @@ export function TimeGuardianWarning({ onClose, onReset }: TimeGuardianWarningPro
               />
             </svg>
           </motion.div>
-          <h2 className="mb-2 text-xl font-semibold">Time's Up!</h2>
+          <h2 className="mb-2 text-xl font-semibold">Time&apos;s Up!</h2>
           <p className="mb-4 text-muted-foreground">
             Take a moment to stretch, rest your eyes, and hydrate.
           </p>

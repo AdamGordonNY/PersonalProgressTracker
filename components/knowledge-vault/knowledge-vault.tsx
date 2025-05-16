@@ -1,38 +1,40 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Book, FileText, ExternalLink, Loader2 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { DocumentViewer } from '@/components/knowledge-vault/document-viewer';
-import { QuickReference } from '@/components/knowledge-vault/quick-reference';
-import { FileFinder } from '@/components/knowledge-vault/file-finder';
-import { useToast } from '@/hooks/use-toast';
-import Fuse from 'fuse.js';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Search, Book, FileText, ExternalLink, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { DocumentViewer } from "@/components/knowledge-vault/document-viewer";
+import { QuickReference } from "@/components/knowledge-vault/quick-reference";
+import { FileFinder } from "@/components/knowledge-vault/file-finder";
+import { useToast } from "@/hooks/use-toast";
+import Fuse from "fuse.js";
 
 interface Document {
   id: string;
   title: string;
-  provider: 'GoogleDrive' | 'OneDrive';
-  type: 'pdf' | 'epub';
+  provider: "GoogleDrive" | "OneDrive";
+  type: "pdf" | "epub";
   url: string;
   content?: string;
 }
 
 export function KnowledgeVault() {
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(
+    null
+  );
   const [showFileFinder, setShowFileFinder] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   // Initialize Fuse.js for searching
   const fuse = new Fuse(documents, {
-    keys: ['title', 'content'],
+    keys: ["title", "content"],
     threshold: 0.3,
   });
 
@@ -43,20 +45,20 @@ export function KnowledgeVault() {
       setTimeout(() => {
         setDocuments([
           {
-            id: '1',
-            title: 'Content Strategy Guide 2025',
-            provider: 'GoogleDrive',
-            type: 'pdf',
-            url: 'https://example.com/doc1.pdf',
-            content: 'Sample content for searching...',
+            id: "1",
+            title: "Content Strategy Guide 2025",
+            provider: "GoogleDrive",
+            type: "pdf",
+            url: "https://example.com/doc1.pdf",
+            content: "Sample content for searching...",
           },
           {
-            id: '2',
-            title: 'Social Media Analytics',
-            provider: 'OneDrive',
-            type: 'pdf',
-            url: 'https://example.com/doc2.pdf',
-            content: 'More sample content...',
+            id: "2",
+            title: "Social Media Analytics",
+            provider: "OneDrive",
+            type: "pdf",
+            url: "https://example.com/doc2.pdf",
+            content: "More sample content...",
           },
         ]);
         setIsLoading(false);
@@ -67,7 +69,7 @@ export function KnowledgeVault() {
   }, []);
 
   const filteredDocuments = searchQuery
-    ? fuse.search(searchQuery).map(result => result.item)
+    ? fuse.search(searchQuery).map((result) => result.item)
     : documents;
 
   const handleScanForFiles = () => {
@@ -85,7 +87,7 @@ export function KnowledgeVault() {
         </div>
         <Button onClick={handleScanForFiles} className="gap-2">
           <Search className="h-4 w-4" />
-          Where's My Stuff?
+          Where&apos;s My Stuff?
         </Button>
       </div>
 
@@ -127,7 +129,7 @@ export function KnowledgeVault() {
                         <h3 className="font-medium">{doc.title}</h3>
                         <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
-                            {doc.provider === 'GoogleDrive' ? (
+                            {doc.provider === "GoogleDrive" ? (
                               <Book className="h-4 w-4" />
                             ) : (
                               <ExternalLink className="h-4 w-4" />

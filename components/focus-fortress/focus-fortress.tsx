@@ -1,20 +1,20 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import useLocalStorageState from 'use-local-storage-state';
-import { Focus, X, Timer } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Switch } from '@/components/ui/switch';
-import { quotes } from '@/lib/motivational-quotes';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import useLocalStorageState from "use-local-storage-state";
+import { Focus, X, Timer } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
+import { quotes } from "@/lib/motivational-quotes";
 
 export function FocusFortress() {
-  const [isActive, setIsActive] = useLocalStorageState('focus-fortress', {
-    defaultValue: false
+  const [isActive, setIsActive] = useLocalStorageState("focus-fortress", {
+    defaultValue: false,
   });
-  const [quote, setQuote] = useState('');
+  const [quote, setQuote] = useState("");
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [totalTime] = useState(25 * 60); // 25 minutes in seconds
 
@@ -24,8 +24,8 @@ export function FocusFortress() {
       setQuote(quotes[Math.floor(Math.random() * quotes.length)]);
 
       // Block distracting sites
-      const style = document.createElement('style');
-      style.id = 'focus-fortress-style';
+      const style = document.createElement("style");
+      style.id = "focus-fortress-style";
       style.textContent = `
         body { overflow: hidden; }
         .focus-hidden { display: none !important; }
@@ -34,7 +34,7 @@ export function FocusFortress() {
 
       // Start timer
       const interval = setInterval(() => {
-        setTimeElapsed(prev => {
+        setTimeElapsed((prev) => {
           if (prev >= totalTime) {
             clearInterval(interval);
             setIsActive(false);
@@ -46,7 +46,7 @@ export function FocusFortress() {
 
       return () => {
         clearInterval(interval);
-        document.getElementById('focus-fortress-style')?.remove();
+        document.getElementById("focus-fortress-style")?.remove();
       };
     }
   }, [isActive, setIsActive, totalTime]);
@@ -106,15 +106,15 @@ export function FocusFortress() {
               <div className="mb-4 flex items-center justify-center gap-2">
                 <Timer className="h-5 w-5" />
                 <span className="text-2xl font-bold">
-                  {String(remainingMinutes).padStart(2, '0')}:
-                  {String(remainingSeconds).padStart(2, '0')}
+                  {String(remainingMinutes).padStart(2, "0")}:
+                  {String(remainingSeconds).padStart(2, "0")}
                 </span>
               </div>
               <Progress value={progress} className="h-2" />
             </div>
 
             <blockquote className="mb-6 border-l-2 pl-4 italic text-muted-foreground">
-              "{quote}"
+              &quot;{quote}&quot;
             </blockquote>
 
             <div className="space-y-4">
