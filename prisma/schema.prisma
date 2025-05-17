@@ -3,20 +3,22 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id            String         @id @default(cuid())
+  id            String        @id @default(cuid())
   name          String?
-  email         String?        @unique
+  email         String?       @unique
   emailVerified DateTime?
   image         String?
   password      String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  coins         Int            @default(0)
+  cloudTokens   Json? // Encrypted tokens for cloud services
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  coins         Int           @default(0)
   habits        Habit[]
   rewards       Reward[]
   golfRounds    GolfRound[]
@@ -29,6 +31,35 @@ model User {
   keywords      Keyword[]
   attachments   Attachment[]
   factSources   FactSource[]
+  feeds         Feed[]
+}
+
+model Feed {
+  id          String   @id @default(cuid())
+  url         String   @unique
+  title       String?
+  lastChecked DateTime @default(now())
+  lastHash    String?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries     Entry[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Entry {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @db.Text
+  url       String
+  feedId    String
+  feed      Feed     @relation(fields: [feedId], references: [id], onDelete: Cascade)
+  published DateTime
+  createdAt DateTime @default(now())
+
+  @@index([feedId])
 }
 
 model Card {
@@ -68,37 +99,37 @@ model Attachment {
 }
 
 model FactSource {
-  id         String   @id @default(cuid())
+  id         String  @id @default(cuid())
   title      String
   url        String?
   quote      String?
   screenshot String?
   cardId     String
   userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  card       Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card       Card    @relation(fields: [cardId], references: [id], onDelete: Cascade)
 }
 
 model Habit {
-  id          String        @id @default(cuid())
+  id          String       @id @default(cuid())
   name        String
   description String?
-  priority    Priority      @default(OPTIONAL)
-  coins       Int           @default(10)
+  priority    Priority     @default(OPTIONAL)
+  coins       Int          @default(10)
   userId      String
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   location    String?
   timeOfDay   DateTime?
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   completions Completion[]
 }
 
 model Completion {
-  id        String   @id @default(cuid())
-  habitId   String
-  date      DateTime @default(now())
-  habit     Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  id      String   @id @default(cuid())
+  habitId String
+  date    DateTime @default(now())
+  habit   Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
 }
 
 model Reward {
@@ -140,22 +171,22 @@ model GolfHole {
 }
 
 model GolfTip {
-  id        String   @id @default(cuid())
-  userId    String
-  title     String
-  content   String
-  date      DateTime @default(now())
-  tags      String[]
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id      String   @id @default(cuid())
+  userId  String
+  title   String
+  content String
+  date    DateTime @default(now())
+  tags    String[]
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model PracticeLog {
-  id        String   @id @default(cuid())
-  userId    String
-  duration  Int      // Duration in minutes
-  date      DateTime @default(now())
-  notes     String?
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id       String   @id @default(cuid())
+  userId   String
+  duration Int // Duration in minutes
+  date     DateTime @default(now())
+  notes    String?
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model MusicSkill {
@@ -186,7 +217,7 @@ model Recording {
   userId    String
   title     String
   url       String
-  duration  Int      // Duration in seconds
+  duration  Int // Duration in seconds
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

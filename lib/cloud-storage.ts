@@ -41,3 +41,18 @@ export const listOneDriveFiles = async (client: any) => {
     throw error;
   }
 };
+export async function refreshMicrosoftToken(refreshToken: string) {
+  const response = await fetch(
+    "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+    {
+      method: "POST",
+      body: new URLSearchParams({
+        client_id: process.env.MICROSOFT_CLIENT_ID!,
+        refresh_token: refreshToken,
+        grant_type: "refresh_token",
+        client_secret: process.env.MICROSOFT_CLIENT_SECRET!,
+      }),
+    }
+  );
+  return response.json();
+}
