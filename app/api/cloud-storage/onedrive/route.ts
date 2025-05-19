@@ -1,17 +1,18 @@
 import { Client } from "@microsoft/microsoft-graph-client";
 import { auth } from "@clerk/nextjs/server";
+import { getMicrosoftTokens } from "@/lib/auth";
+import { TokenCredentialAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials";
 import { NextResponse } from "next/server";
-
 export async function GET(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
-
+    const token = await getMicrosoftTokens(userId);
     const client = Client.init({
       authProvider: (done) => {
-        done(null, process.env.MICROSOFT_ACCESS_TOKEN!);
+        done(null, token.accessToken);
       },
     });
 
@@ -32,10 +33,10 @@ export async function POST(request: Request) {
     }
 
     const { itemId } = await request.json();
-
+    const token = await getMicrosoftTokens(userId);
     const client = Client.init({
       authProvider: (done) => {
-        done(null, process.env.MICROSOFT_ACCESS_TOKEN!);
+        done(null, token.accessToken);
       },
     });
 

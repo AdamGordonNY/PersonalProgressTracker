@@ -32,6 +32,28 @@ model User {
   attachments   Attachment[]
   factSources   FactSource[]
   feeds         Feed[]
+
+  UserGoogleToken UserGoogleToken[]
+
+  UserMicrosoftToken UserMicrosoftToken[]
+}
+
+model UserGoogleToken {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  accessToken  String
+  refreshToken String
+  expiresAt    DateTime
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model UserMicrosoftToken {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  accessToken  String
+  refreshToken String
+  expiresAt    DateTime
+  user         User     @relation(fields: [userId], references: [id])
 }
 
 model Feed {
