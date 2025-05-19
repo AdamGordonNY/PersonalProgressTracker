@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { getMicrosoftTokens } from "@/lib/auth";
 import { TokenCredentialAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials";
 import { NextResponse } from "next/server";
+
 export async function GET(request: Request) {
   try {
     const { userId } = await auth();
@@ -11,8 +12,8 @@ export async function GET(request: Request) {
     }
     const token = await getMicrosoftTokens(userId);
     const client = Client.init({
-      authProvider: (done) => {
-        done(null, token.accessToken);
+      authProvider: async (done) => {
+        done(null, await token.accessToken);
       },
     });
 
@@ -35,8 +36,8 @@ export async function POST(request: Request) {
     const { itemId } = await request.json();
     const token = await getMicrosoftTokens(userId);
     const client = Client.init({
-      authProvider: (done) => {
-        done(null, token.accessToken);
+      authProvider: async (done) => {
+        done(null, await token.accessToken);
       },
     });
 

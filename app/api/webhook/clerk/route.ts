@@ -5,6 +5,8 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { clerkClient } from "@clerk/nextjs/server";
 import { updateUserCloudTokens, updateUserSubscription } from "@/actions/user";
+// app/api/cloud/onedrive/route.ts
+export const runtime = "nodejs"; // Force Node.js runtime
 export async function POST(req: Request) {
   // Get the headers
   const headerPayload = headers();

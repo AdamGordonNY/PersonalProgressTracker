@@ -12,15 +12,15 @@ export async function updateUserCloudTokens(
 ) {
   try {
     // Encrypt tokens before storing
-    const encryptedTokens = Object.entries(tokens).reduce(
-      (acc, [key, value]) => {
+    const encryptedTokensEntries = await Promise.all(
+      Object.entries(tokens).map(async ([key, value]) => {
         if (value) {
-          acc[key] = encrypt(value);
+          return [key, await encrypt(value)];
         }
-        return acc;
-      },
-      {} as Record<string, string>
+        return [key, value];
+      })
     );
+    const encryptedTokens = Object.fromEntries(encryptedTokensEntries);
 
     // Update database
     await db.user.update({
@@ -59,10 +59,12 @@ export async function getUserCloudTokens(userId: string) {
     if (!user?.cloudTokens) return null;
 
     // Decrypt tokens
-    return Object.entries(user.cloudTokens).reduce((acc, [key, value]) => {
-      acc[key] = decrypt(value);
-      return acc;
-    }, {} as Record<string, string>);
+    const decryptedEntries = await Promise.all(
+      Object.entries(user.cloudTokens).map(async ([key, value]) => {
+        return [key, await decrypt(value)];
+      })
+    );
+    return Object.fromEntries(decryptedEntries) as Record<string, string>;
   } catch (error) {
     console.error("Error getting cloud tokens:", error);
     return null;

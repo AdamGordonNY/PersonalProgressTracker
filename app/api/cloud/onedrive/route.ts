@@ -4,8 +4,7 @@ import { getUserCloudTokens } from "@/actions/user";
 import { initializeOneDrive, listOneDriveFiles } from "@/lib/cloud-storage";
 import { kv } from "@vercel/kv";
 
-export const runtime = "edge";
-
+export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   try {
     const { userId } = await auth();

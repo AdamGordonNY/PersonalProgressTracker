@@ -5,7 +5,7 @@ import { Resend } from "resend";
 import { kv } from "@vercel/kv";
 import { SHA256 } from "crypto-js";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 const parser = new Parser();
 const resend = new Resend(process.env.RESEND_API_KEY);

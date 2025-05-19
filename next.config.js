@@ -1,5 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  webpack: (config) => {
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      crypto: false,
+      http: false,
+      https: false,
+      net: false
+    };
+    return config;
+  },
+  experimental: {
+    serverComponentsExternalPackages: ['googleapis', 'https-proxy-agent']
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },

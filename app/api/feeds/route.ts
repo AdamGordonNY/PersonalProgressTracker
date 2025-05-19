@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { kv } from "@vercel/kv";
 import { z } from "zod";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 const feedSchema = z.object({
   url: z

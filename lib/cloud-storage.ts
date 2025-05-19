@@ -1,3 +1,4 @@
+import "server-only";
 import { google } from "googleapis";
 import { Client } from "@microsoft/microsoft-graph-client";
 
