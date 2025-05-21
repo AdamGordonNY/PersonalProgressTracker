@@ -56,7 +56,15 @@ export async function POST(req: Request) {
     try {
       const client = await clerkClient();
       // Get connected cloud providers
-
+      await db.user.create({
+        data: {
+          id: id,
+          email: email_addresses[0]?.email_address,
+          name:
+            `${attributes.first_name || ""} ${attributes.last_name || ""}`.trim() ||
+            null,
+        },
+      });
       const googleToken = await client.users.getUserOauthAccessToken(
         id,
         "google"
@@ -84,20 +92,12 @@ export async function POST(req: Request) {
     } catch (error) {
       console.error("Webhook processing error:", error);
     }
-    await db.user.create({
-      data: {
-        id: id,
-        email: email_addresses[0]?.email_address,
-        name:
-          `${attributes.first_name || ""} ${attributes.last_name || ""}`.trim() ||
-          null,
-      },
-    });
 
     return NextResponse.json({ message: "User created" }, { status: 201 });
   }
 
   if (eventType === "user.updated") {
+    const client = await clerkClient();
     const { id, email_addresses, ...attributes } = evt.data;
 
     await db.user.update({
@@ -109,7 +109,27 @@ export async function POST(req: Request) {
           null,
       },
     });
+    const googleToken = await client.users.getUserOauthAccessToken(
+      id,
+      "google"
+    );
+    const microsoftToken = await client.users.getUserOauthAccessToken(
+      id,
+      "microsoft"
+    );
+    const cloudTokens: Record<string, string> = {};
+    if (googleToken) {
+      cloudTokens.google = googleToken.data[0]?.token;
+    }
+    if (microsoftToken) {
+      cloudTokens.microsoft = microsoftToken.data[0]?.token;
+    }
+    // Extract tokens from external accounts
 
+    // Update database with encrypted tokens
+    if (Object.keys(cloudTokens).length > 0) {
+      await updateUserCloudTokens(id, cloudTokens);
+    }
     return NextResponse.json({ message: "User updated" }, { status: 200 });
   }
 

@@ -11,36 +11,19 @@ import {
   useSensors,
   PointerSensor,
 } from "@dnd-kit/core";
-import { SortableContext, arrayMove } from "@dnd-kit/sortable";
+import { SortableContext } from "@dnd-kit/sortable";
 import { KanbanColumn } from "@/components/dashboard/kanban-column";
 import { KanbanCard } from "@/components/dashboard/kanban-card";
 import { AddCardDialog } from "@/components/dashboard/add-card-dialog";
-import { Card as CardType } from "@/lib/types";
+import { Card } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { useBoard } from "@/lib/store";
 
-type KanbanBoardProps = {
-  cards: CardType[];
-  columns: string[];
-  onCardStatusChange: (cardId: string, newStatus: string) => void;
-  onAddCard: (card: CardType) => void;
-  onUpdateCard: (card: CardType) => void;
-  onDeleteCard: (cardId: string) => void;
-};
-
-export function KanbanBoard({
-  cards,
-  columns,
-  onCardStatusChange,
-  onAddCard,
-  onUpdateCard,
-  onDeleteCard,
-}: KanbanBoardProps) {
+export function KanbanBoard() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
-  
-  // Find the active card if there is one
-  const activeCard = activeId ? cards.find((c) => c.id === activeId) || null : null;
+  const { columns, cards, reorderCards, reorderColumns } = useBoard();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -55,77 +38,130 @@ export function KanbanBoard({
   };
 
   const handleDragOver = (event: DragOverEvent) => {
-    // Implementation for reordering within columns could be added here
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    if (activeId === overId) return;
+
+    const isActiveACard = active.data.current?.type === "card";
+    const isOverACard = over.data.current?.type === "card";
+
+    if (!isActiveACard) return;
+
+    // Dropping a card over another card
+    if (isActiveACard && isOverACard) {
+      const activeIndex = cards.findIndex((card) => card.id === activeId);
+      const overIndex = cards.findIndex((card) => card.id === overId);
+
+      if (cards[activeIndex].columnId !== cards[overIndex].columnId) {
+        // Card is being moved to a different column
+        const updates = cards.map((card) => {
+          if (card.id === activeId) {
+            return {
+              id: card.id,
+              columnId: cards[overIndex].columnId,
+              order: overIndex,
+            };
+          }
+          return { id: card.id, columnId: card.columnId, order: card.order };
+        });
+        reorderCards(updates);
+      }
+    }
+
+    // Dropping a card over a column
+    if (isActiveACard && !isOverACard) {
+      const activeIndex = cards.findIndex((card) => card.id === activeId);
+      const updates = cards.map((card) => {
+        if (card.id === activeId) {
+          return { id: card.id, columnId: overId as string, order: -1 };
+        }
+        return { id: card.id, columnId: card.columnId, order: card.order };
+      });
+      reorderCards(updates);
+    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    
-    if (over && active.id !== over.id) {
-      const isCard = active.id.toString().includes('-');
-      if (isCard && over.id) {
-        // If we're dropping onto a column
-        if (!over.id.toString().includes('-')) {
-          // Change the card's status
-          onCardStatusChange(active.id as string, over.id as string);
-        }
+
+    if (!over) {
+      setActiveId(null);
+      return;
+    }
+
+    if (active.id !== over.id) {
+      const isColumn = active.data.current?.type === "column";
+
+      if (isColumn) {
+        const oldIndex = columns.findIndex((col) => col.id === active.id);
+        const newIndex = columns.findIndex((col) => col.id === over.id);
+
+        const updates = columns.map((col, index) => ({
+          id: col.id,
+          order:
+            index === oldIndex
+              ? newIndex
+              : index === newIndex
+                ? oldIndex
+                : index,
+        }));
+
+        reorderColumns(updates);
       }
     }
-    
+
     setActiveId(null);
   };
-
-  // Group cards by status
-  const cardsByColumn = columns.reduce((acc, column) => {
-    acc[column] = cards.filter((card) => card.status === column);
-    return acc;
-  }, {} as Record<string, CardType[]>);
 
   return (
     <div className="h-full">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-sage-700 dark:text-sage-300">Content Board</h1>
-        <Button onClick={() => setShowAddDialog(true)} className="gap-1 bg-sage-600 hover:bg-sage-700">
+        <h1 className="text-2xl font-bold text-sage-700 dark:text-sage-300">
+          Content Board
+        </h1>
+        <Button
+          onClick={() => setShowAddDialog(true)}
+          className="gap-1 bg-sage-600 hover:bg-sage-700"
+        >
           <Plus className="h-4 w-4" /> Add New Content
         </Button>
       </div>
-      
+
       <DndContext
         sensors={sensors}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {columns.map((column) => (
-            <KanbanColumn 
-              key={column} 
-              title={column} 
-              cards={cardsByColumn[column] || []}
-              onUpdateCard={onUpdateCard}
-              onDeleteCard={onDeleteCard}
+            <KanbanColumn
+              key={column.id}
+              column={column}
+              cards={cards.filter((card) => card.columnId === column.id)}
             />
           ))}
         </div>
 
         <DragOverlay>
-          {activeId && activeCard ? (
+          {activeId && (
             <div className="w-[250px]">
-              <KanbanCard 
-                card={activeCard} 
-                onUpdateCard={onUpdateCard}
-                onDeleteCard={onDeleteCard}
+              <KanbanCard
+                card={cards.find((card) => card.id === activeId) as Card}
               />
             </div>
-          ) : null}
+          )}
         </DragOverlay>
       </DndContext>
 
-      <AddCardDialog 
-        open={showAddDialog} 
+      <AddCardDialog
+        open={showAddDialog}
         onOpenChange={setShowAddDialog}
-        onAddCard={onAddCard}
-        statuses={columns}
+        columns={columns}
       />
     </div>
   );

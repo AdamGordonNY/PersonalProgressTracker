@@ -3,21 +3,21 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useState } from "react";
-import { Card } from "@/lib/types";
+import { Card } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
 import { CardDialog } from "@/components/dashboard/card-dialog";
 import { Card as CardUI, CardContent } from "@/components/ui/card";
 import { Paperclip, Link } from "lucide-react";
+import { useBoard } from "@/lib/store";
 
 interface KanbanCardProps {
   card: Card;
-  onUpdateCard: (card: Card) => void;
-  onDeleteCard: (cardId: string) => void;
 }
 
-export function KanbanCard({ card, onUpdateCard, onDeleteCard }: KanbanCardProps) {
+export function KanbanCard({ card }: KanbanCardProps) {
   const [open, setOpen] = useState(false);
-  
+  const { updateCard, deleteCard } = useBoard();
+
   const {
     attributes,
     listeners,
@@ -39,9 +39,6 @@ export function KanbanCard({ card, onUpdateCard, onDeleteCard }: KanbanCardProps
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const hasAttachments = card.attachments && card.attachments.length > 0;
-  const hasFactSources = card.factSources && card.factSources.length > 0;
-
   return (
     <>
       <CardUI
@@ -59,35 +56,6 @@ export function KanbanCard({ card, onUpdateCard, onDeleteCard }: KanbanCardProps
               {card.description}
             </p>
           )}
-          {card.keywords.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1">
-              {card.keywords.map((keyword) => (
-                <Badge
-                  key={keyword.id}
-                  variant="outline"
-                  className="inline-flex items-center rounded-full border bg-muted/50 px-2 py-0.5 text-xs"
-                >
-                  {keyword.name}
-                </Badge>
-              ))}
-            </div>
-          )}
-          {(hasAttachments || hasFactSources) && (
-            <div className="mt-2 flex gap-2 text-muted-foreground">
-              {hasAttachments && (
-                <div className="flex items-center gap-1 text-xs">
-                  <Paperclip className="h-3 w-3" />
-                  <span>{card.attachments.length}</span>
-                </div>
-              )}
-              {hasFactSources && (
-                <div className="flex items-center gap-1 text-xs">
-                  <Link className="h-3 w-3" />
-                  <span>{card.factSources.length}</span>
-                </div>
-              )}
-            </div>
-          )}
         </CardContent>
       </CardUI>
 
@@ -95,8 +63,8 @@ export function KanbanCard({ card, onUpdateCard, onDeleteCard }: KanbanCardProps
         card={card}
         open={open}
         onOpenChange={setOpen}
-        onUpdateCard={onUpdateCard}
-        onDeleteCard={onDeleteCard}
+        onUpdateCard={updateCard}
+        onDeleteCard={deleteCard}
       />
     </>
   );

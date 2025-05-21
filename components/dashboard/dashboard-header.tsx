@@ -1,27 +1,26 @@
-import Link from "next/link";
+"use client";
+
+import { useState } from "react";
 import { UserButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Layers, Search, Plus } from "lucide-react";
+import { Layers, Search } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { useState } from "react";
+import { useBoard } from "@/lib/store";
 
 export function DashboardHeader() {
   const [searchQuery, setSearchQuery] = useState("");
+  const { activeBoard } = useBoard();
 
   return (
     <header className="sticky top-0 z-10 border-b bg-background">
       <div className="flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-2 md:gap-4">
-          <Link href="/dashboard" className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <Layers className="h-6 w-6 text-sage-600" />
-            <span className="text-xl font-semibold">ContentBoard</span>
-          </Link>
-          <div className="hidden md:block">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Plus className="h-4 w-4" />
-              New Card
-            </Button>
+            <span className="text-xl font-semibold">
+              {activeBoard?.title || "Content Board"}
+            </span>
           </div>
         </div>
         <div className="flex flex-1 items-center justify-end gap-4">

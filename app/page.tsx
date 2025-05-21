@@ -17,7 +17,9 @@ export default async function Home() {
         <div className="container flex h-16 items-center justify-between px-4 md:px-6">
           <div className="flex items-center gap-2">
             <Layers className="h-6 w-6 text-sage-600" />
-            <span className="text-xl font-semibold">ContentBoard</span>
+            <span className="text-xl font-semibold">
+              Personal Management Board
+            </span>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/sign-in">
@@ -35,11 +37,10 @@ export default async function Home() {
             <div className="flex flex-col justify-center space-y-4">
               <div className="space-y-2">
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-                  Streamline Your Content Creation Workflow
+                  Streamlined , Personalized Knowledge Management
                 </h1>
                 <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                  Organize, track, and optimize your content production with our
-                  intuitive Kanban dashboard built for content creators.
+                  Optimize and personalize information suited to your needs.
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
@@ -60,12 +61,12 @@ export default async function Home() {
                 <div className="flex h-full gap-4 overflow-x-auto pb-4">
                   <div className="flex w-72 flex-col rounded-md border bg-slate-50 p-2">
                     <div className="mb-2 flex items-center justify-between">
-                      <h3 className="font-medium">Ideas</h3>
+                      <h3 className="font-medium">Knowledge Base</h3>
                       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sage-100 text-xs text-sage-600">
                         3
                       </span>
                     </div>
-                    <div className="space-y-2">
+                    {/* <div className="space-y-2">
                       <div className="rounded-md border bg-white p-3 shadow-sm">
                         <h4 className="font-medium">
                           Social Media Trends 2025
@@ -88,8 +89,9 @@ export default async function Home() {
                         </div>
                       </div>
                     </div>
+                  */}{" "}
                   </div>
-                  <div className="flex w-72 flex-col rounded-md border bg-slate-50 p-2">
+                  {/* <div className="flex w-72 flex-col rounded-md border bg-slate-50 p-2">
                     <div className="mb-2 flex items-center justify-between">
                       <h3 className="font-medium">Research</h3>
                       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sage-100 text-xs text-sage-600">
@@ -109,7 +111,7 @@ export default async function Home() {
                         </span>
                       </div>
                     </div>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             </div>

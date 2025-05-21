@@ -4,33 +4,29 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tag, LayoutDashboard, FileText, CheckSquare, Settings } from "lucide-react";
-import { Card } from "@/lib/types";
+import { LayoutDashboard, Plus, Settings } from "lucide-react";
+import { useBoard } from "@/lib/store";
+import { Board } from "@prisma/client";
 
-type SidebarProps = {
-  onFilterByKeyword: (keyword: string | null) => void;
-  activeFilter: string | null;
-  cards: Card[];
-};
-
-export function Sidebar({ onFilterByKeyword, activeFilter, cards }: SidebarProps) {
+export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { boards, activeBoard, setActiveBoard, createBoard } = useBoard();
 
-  // Extract unique keywords from all cards
-  const allKeywords = Array.from(
-    new Set(
-      cards.flatMap(card => card.keywords.map(keyword => keyword.name))
-    )
-  ).sort();
+  const handleCreateBoard = () => {
+    createBoard({
+      title: "New Board",
+      description: "A new content board",
+    });
+  };
 
   return (
-    <div 
+    <div
       className={`bg-muted/40 transition-all duration-300 ${
         isCollapsed ? "w-[70px]" : "w-[240px]"
       }`}
     >
       <div className="flex h-16 items-center justify-between border-b px-4">
-        {!isCollapsed && <h2 className="text-sm font-semibold">Navigation</h2>}
+        {!isCollapsed && <h2 className="text-sm font-semibold">Boards</h2>}
         <Button
           variant="ghost"
           size="icon"
@@ -38,103 +34,60 @@ export function Sidebar({ onFilterByKeyword, activeFilter, cards }: SidebarProps
           className="ml-auto h-8 w-8"
         >
           {isCollapsed ? (
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              width="16" 
-              height="16" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <path d="m9 18 6-6-6-6"/>
+              <path d="m9 18 6-6-6-6" />
             </svg>
           ) : (
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              width="16" 
-              height="16" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <path d="m15 18-6-6 6-6"/>
+              <path d="m15 18-6-6 6-6" />
             </svg>
           )}
         </Button>
       </div>
       <ScrollArea className="h-[calc(100vh-4rem)] px-3 py-4">
         <div className="space-y-1">
+          {boards.map((board) => (
+            <Button
+              key={board.id}
+              variant={activeBoard?.id === board.id ? "secondary" : "ghost"}
+              className={`w-full justify-start ${isCollapsed ? "px-2" : ""}`}
+              onClick={() => setActiveBoard(board.id)}
+            >
+              <LayoutDashboard className="mr-2 h-4 w-4" />
+              {!isCollapsed && <span className="truncate">{board.title}</span>}
+            </Button>
+          ))}
           <Button
             variant="ghost"
             className={`w-full justify-start ${isCollapsed ? "px-2" : ""}`}
+            onClick={handleCreateBoard}
           >
-            <LayoutDashboard className="mr-2 h-4 w-4" />
-            {!isCollapsed && <span>Dashboard</span>}
-          </Button>
-          <Button
-            variant="ghost"
-            className={`w-full justify-start ${isCollapsed ? "px-2" : ""}`}
-          >
-            <FileText className="mr-2 h-4 w-4" />
-            {!isCollapsed && <span>Content</span>}
-          </Button>
-          <Button
-            variant="ghost"
-            className={`w-full justify-start ${isCollapsed ? "px-2" : ""}`}
-          >
-            <CheckSquare className="mr-2 h-4 w-4" />
-            {!isCollapsed && <span>Fact Check</span>}
+            <Plus className="mr-2 h-4 w-4" />
+            {!isCollapsed && <span>New Board</span>}
           </Button>
         </div>
 
-        {!isCollapsed && (
-          <>
-            <Separator className="my-4" />
-            <div className="space-y-1">
-              <h3 className="mb-2 text-xs font-medium">Filter by Keyword</h3>
-              <Button
-                variant={activeFilter === null ? "secondary" : "ghost"}
-                size="sm"
-                className="w-full justify-start"
-                onClick={() => onFilterByKeyword(null)}
-              >
-                <span>All Content</span>
-              </Button>
-              {allKeywords.map((keyword) => (
-                <Button
-                  key={keyword}
-                  variant={activeFilter === keyword ? "secondary" : "ghost"}
-                  size="sm"
-                  className="w-full justify-start"
-                  onClick={() => onFilterByKeyword(keyword)}
-                >
-                  <Tag className="mr-2 h-3 w-3" />
-                  <span className="truncate">{keyword}</span>
-                </Button>
-              ))}
-            </div>
-          </>
-        )}
-
-        {isCollapsed && (
-          <div className="mt-4 flex flex-col items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              title="Tags"
-              onClick={() => setIsCollapsed(false)}
-            >
-              <Tag className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
+        <Separator className="my-4" />
 
         <div className={`mt-auto pt-4 ${isCollapsed ? "text-center" : ""}`}>
           <Button

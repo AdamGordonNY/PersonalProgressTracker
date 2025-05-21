@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { encrypt, decrypt } from "@/lib/encryption";
-import { clerkClient } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { CloudTokens } from "@/lib/types";
 import { User } from "@prisma/client";
 
@@ -88,5 +88,23 @@ export async function updateUserSubscription(
   } catch (error) {
     console.error("Error updating subscription:", error);
     return { success: false, error: "Failed to update subscription" };
+  }
+}
+export async function getUserCards() {
+  try {
+    const { userId } = await auth();
+    const user = await db.user.findUnique({
+      where: { id: userId! },
+      include: {
+        cards: true,
+      },
+    });
+
+    if (!user?.cards) return null;
+
+    return user.cards;
+  } catch (error) {
+    console.error("Error getting user cards:", error);
+    return null;
   }
 }

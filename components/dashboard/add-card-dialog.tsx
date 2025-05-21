@@ -1,54 +1,50 @@
 "use client";
 
 import { useState } from "react";
-import { 
-  Dialog, 
-  DialogContent, 
+import {
+  Dialog,
+  DialogContent,
   DialogFooter,
-  DialogHeader, 
-  DialogTitle 
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/lib/types";
+import { Column } from "@prisma/client";
 import { Plus, X } from "lucide-react";
+import { useBoard } from "@/lib/store";
 
 interface AddCardDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddCard: (card: Card) => void;
-  statuses: string[];
+  columns: Column[];
 }
 
-export function AddCardDialog({ 
-  open, 
-  onOpenChange, 
-  onAddCard,
-  statuses,
+export function AddCardDialog({
+  open,
+  onOpenChange,
+  columns,
 }: AddCardDialogProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [status, setStatus] = useState(statuses[0]);
-  const [keywords, setKeywords] = useState<{id: string, name: string}[]>([]);
+  const [columnId, setColumnId] = useState(columns[0]?.id || "");
+  const [keywords, setKeywords] = useState<string[]>([]);
   const [newKeyword, setNewKeyword] = useState("");
+  const { addCard } = useBoard();
 
-  const handleSubmit = () => {
-    if (!title.trim()) return;
+  const handleSubmit = async () => {
+    if (!title.trim() || !columnId) return;
 
-    const newCard: Card = {
-      id: `new-${Date.now()}`,
+    await addCard({
       title,
       description,
-      status,
+      columnId,
       keywords,
-      attachments: [],
-      factSources: [],
-    };
+    });
 
-    onAddCard(newCard);
     resetForm();
     onOpenChange(false);
   };
@@ -56,36 +52,30 @@ export function AddCardDialog({
   const resetForm = () => {
     setTitle("");
     setDescription("");
-    setStatus(statuses[0]);
+    setColumnId(columns[0]?.id || "");
     setKeywords([]);
     setNewKeyword("");
   };
 
   const addKeyword = () => {
-    if (newKeyword.trim()) {
-      const keywordExists = keywords.some(
-        (k) => k.name.toLowerCase() === newKeyword.toLowerCase()
-      );
-
-      if (!keywordExists) {
-        setKeywords([
-          ...keywords,
-          { id: `temp-${Date.now()}`, name: newKeyword },
-        ]);
-      }
+    if (newKeyword.trim() && !keywords.includes(newKeyword.trim())) {
+      setKeywords([...keywords, newKeyword.trim()]);
       setNewKeyword("");
     }
   };
 
-  const removeKeyword = (keywordId: string) => {
-    setKeywords(keywords.filter((k) => k.id !== keywordId));
+  const removeKeyword = (keyword: string) => {
+    setKeywords(keywords.filter((k) => k !== keyword));
   };
 
   return (
-    <Dialog open={open} onOpenChange={(open) => {
-      if (!open) resetForm();
-      onOpenChange(open);
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) resetForm();
+        onOpenChange(open);
+      }}
+    >
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
           <DialogTitle>Add New Content</DialogTitle>
@@ -111,16 +101,16 @@ export function AddCardDialog({
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="status">Status</Label>
+            <Label htmlFor="status">Column</Label>
             <select
               id="status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
+              value={columnId}
+              onChange={(e) => setColumnId(e.target.value)}
               className="rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             >
-              {statuses.map((statusOption) => (
-                <option key={statusOption} value={statusOption}>
-                  {statusOption}
+              {columns.map((column) => (
+                <option key={column.id} value={column.id}>
+                  {column.title}
                 </option>
               ))}
             </select>
@@ -130,16 +120,16 @@ export function AddCardDialog({
             <div className="flex flex-wrap gap-1">
               {keywords.map((keyword) => (
                 <Badge
-                  key={keyword.id}
+                  key={keyword}
                   variant="secondary"
                   className="flex items-center gap-1"
                 >
-                  {keyword.name}
+                  {keyword}
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-4 w-4 rounded-full hover:bg-destructive/90 hover:text-destructive-foreground"
-                    onClick={() => removeKeyword(keyword.id)}
+                    onClick={() => removeKeyword(keyword)}
                   >
                     <X className="h-3 w-3" />
                   </Button>
@@ -174,7 +164,11 @@ export function AddCardDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={!title.trim()} className="bg-sage-600 hover:bg-sage-700">
+          <Button
+            onClick={handleSubmit}
+            disabled={!title.trim() || !columnId}
+            className="bg-sage-600 hover:bg-sage-700"
+          >
             Create
           </Button>
         </DialogFooter>

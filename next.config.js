@@ -11,7 +11,7 @@ const nextConfig = {
     return config;
   },
   experimental: {
-    serverComponentsExternalPackages: ['googleapis', 'https-proxy-agent']
+    serverComponentsExternalPackages: ['googleapis', 'https-proxy-agent'], missingSuspenseWithCSRBailout: false,
   },
   eslint: {
     ignoreDuringBuilds: true,
