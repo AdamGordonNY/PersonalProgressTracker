@@ -56,15 +56,40 @@ export async function POST(req: Request) {
     try {
       const client = await clerkClient();
       // Get connected cloud providers
-      await db.user.create({
+      const user = await db.user.create({
         data: {
           id: id,
           email: email_addresses[0]?.email_address,
           name:
-            `${attributes.first_name || ""} ${attributes.last_name || ""}`.trim() ||
+            `${evt.data.first_name || ""} ${evt.data.last_name || ""}`.trim() ||
             null,
         },
       });
+
+      // Create default board
+      const board = await db.board.create({
+        data: {
+          title: "My First Board",
+          description: "Welcome to your content board!",
+          order: 0,
+          userId: user.id,
+        },
+      });
+
+      // Create default columns
+      const defaultColumns = ["Ideas", "Research", "In Progress", "Done"];
+      await Promise.all(
+        defaultColumns.map((title, index) =>
+          db.column.create({
+            data: {
+              userId: user.id,
+              title,
+              order: index,
+              boardId: board.id,
+            },
+          })
+        )
+      );
       const googleToken = await client.users.getUserOauthAccessToken(
         id,
         "google"

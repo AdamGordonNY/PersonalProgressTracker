@@ -1,15 +1,16 @@
-import './globals.css';
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import { ClerkProvider } from '@clerk/nextjs';
-import { ThemeProvider } from '@/components/theme-provider';
-import { Toaster } from '@/components/ui/toaster';
+import "./globals.css";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/toaster";
+import { Footer } from "@/components/footer";
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Content Dashboard',
-  description: 'Kanban-style dashboard for content creators',
+  title: "Content Dashboard",
+  description: "Kanban-style dashboard for content creators",
 };
 
 export default function RootLayout({
@@ -28,6 +29,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             {children}
+            <Footer />
             <Toaster />
           </ThemeProvider>
         </body>
