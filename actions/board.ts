@@ -142,3 +142,40 @@ export async function reorderBoards(updates: { id: string; order: number }[]) {
     return { error: "Failed to reorder boards" };
   }
 }
+// actions/board.ts
+export const getDefaultBoard = async () => {
+  try {
+    const boards = await db.board.findMany({
+      orderBy: { order: "asc" },
+      take: 1,
+      include: {
+        columns: {
+          include: { cards: true },
+          orderBy: { order: "asc" },
+        },
+      },
+    });
+
+    return { board: boards[0] || null };
+  } catch (error) {
+    return { error: "Failed to load default board" };
+  }
+};
+
+export const getBoardDetails = async (boardId: string) => {
+  try {
+    const board = await db.board.findUnique({
+      where: { id: boardId },
+      include: {
+        columns: {
+          include: { cards: true },
+          orderBy: { order: "asc" },
+        },
+      },
+    });
+
+    return board ? { board } : { error: "Board not found" };
+  } catch (error) {
+    return { error: "Failed to load board details" };
+  }
+};

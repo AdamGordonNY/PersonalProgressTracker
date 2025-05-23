@@ -1,4 +1,4 @@
-import { User } from "@prisma/client";
+import { User, Keyword, FactSource } from "@prisma/client";
 
 export interface Card {
   id: string;
@@ -10,10 +10,10 @@ export interface Card {
   factSources: FactSource[];
 }
 
-export interface Keyword {
-  id: string;
-  name: string;
-}
+// export interface Keyword {
+//   id: string;
+//   name: string;
+// }
 
 export interface Attachment {
   id: string;
@@ -25,14 +25,14 @@ export interface Attachment {
   createdAt: Date;
 }
 
-export interface FactSource {
-  id: string;
-  title: string;
-  url: string | null;
-  quote: string | null;
-  screenshot: string | null;
-  cardId: string;
-}
+// export interface FactSource {
+//   id: string;
+//   title: string;
+//   url: string | null;
+//   quote: string | null;
+//   screenshot: string | null;
+//   cardId: string;
+// }
 export interface CloudAccess {
   google: boolean;
   microsoft: boolean;

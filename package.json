@@ -62,6 +62,7 @@
     "fuse.js": "^7.0.0",
     "googleapis": "^134.0.0",
     "input-otp": "^1.2.4",
+    "lodash-es": "^4.17.21",
     "lucide-react": "^0.344.0",
     "next": "^14.2.28",
     "next-themes": "^0.2.1",
@@ -74,6 +75,7 @@
     "react-hook-form": "^7.51.0",
     "react-pdf": "^9.2.1",
     "react-resizable-panels": "^2.0.11",
+    "react-virtuoso": "^4.12.7",
     "recharts": "^2.12.2",
     "resend": "^4.5.1",
     "rss-parser": "^3.13.0",
@@ -90,6 +92,7 @@
   },
   "devDependencies": {
     "@types/crypto-js": "^4.2.2",
+    "@types/lodash-es": "^4.17.12",
     "@types/node": "^20.11.25",
     "@types/react": "^18.2.64",
     "@types/react-dom": "^18.2.21",

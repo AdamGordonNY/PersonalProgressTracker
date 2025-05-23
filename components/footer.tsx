@@ -8,7 +8,9 @@ export function Footer() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Layers className="h-5 w-5 text-sage-600" />
-            <span className="text-lg font-semibold">ContentBoard</span>
+            <span className="text-lg font-semibold">
+              Content Board - Personal Progress Tracker
+            </span>
           </div>
           <nav className="hidden gap-4 sm:flex">
             <Link

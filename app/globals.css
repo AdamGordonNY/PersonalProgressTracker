@@ -79,4 +79,34 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Add these styles to your board container */
+}
+.board-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+  contain: strict;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+.column-wrapper {
+  transform: translateZ(0);
+} /* Add smooth transitions */
+.card {
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+/* During dragging */
+.card-dragging {
+  opacity: 0.8;
+  transform: scale(1.02);
+  z-index: 100;
+}
+
+/* Drop target highlighting */
+.column-drop-target {
+  background: rgba(0, 0, 0, 0.05);
+  transition: background 0.2s ease;
 }

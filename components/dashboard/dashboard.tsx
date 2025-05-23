@@ -11,18 +11,16 @@ import { Spinner } from "@/components/ui/spinner";
 import { Board } from "@prisma/client";
 
 export default function Dashboard({ userId }: { userId: string }) {
-  const { isLoading, error, fetchBoards, setActiveBoard } = useBoard();
+  const { isLoading, error, fetchBoards, setActiveBoard, getDefaultBoard } =
+    useBoard();
 
   useEffect(() => {
-    const fetchAndSetBoard = async () => {
-      const boards = await fetchBoards();
-      if (Array.isArray(boards) && boards[0]?.id) {
-        setActiveBoard(boards[0].id);
-      }
+    const initialize = async () => {
+      await getDefaultBoard();
+      await fetchBoards();
     };
-    fetchAndSetBoard();
-  }, [fetchBoards, setActiveBoard]);
-
+    initialize();
+  }, []);
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">

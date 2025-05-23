@@ -13,8 +13,41 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@prisma/client";
-import { Trash2, Plus, Link, FileText, Info } from "lucide-react";
+import { Card as PrismaCard } from "@prisma/client";
+
+// Extend Card type to include keywords, factSources, and attachments
+type Keyword = { id: string; name: string; cardId: string };
+type FactSource = {
+  id: string;
+  title: string;
+  url: string;
+  quote?: string;
+  cardId: string;
+  screenshot: string | null;
+};
+type Attachment = {
+  id: string;
+  name: string;
+  url: string;
+  fileType: string;
+  provider: string;
+};
+
+type Card = PrismaCard & {
+  keywords?: Keyword[];
+  factSources?: FactSource[];
+  attachments?: Attachment[];
+};
+import {
+  Trash2,
+  Plus,
+  Link,
+  FileText,
+  Info,
+  Tag,
+  X,
+  Paperclip,
+} from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,13 +79,18 @@ export function CardDialog({
 }: CardDialogProps) {
   const [editedCard, setEditedCard] = useState<Card>({ ...card });
   const [newKeyword, setNewKeyword] = useState("");
+  const [newFactSource, setNewFactSource] = useState({
+    title: "",
+    url: "",
+    quote: "",
+  });
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const handleSave = () => {
     onUpdateCard(card.id, {
       title: editedCard.title,
       description: editedCard.description!,
-      keywords: [], // Add keywords handling
+      keywords: editedCard.keywords?.map((k) => k.name) || [],
     });
     onOpenChange(false);
   };
@@ -61,6 +99,59 @@ export function CardDialog({
     onDeleteCard(card.id);
     setShowDeleteDialog(false);
     onOpenChange(false);
+  };
+
+  const addKeyword = () => {
+    if (
+      newKeyword.trim() &&
+      !editedCard.keywords?.some((k) => k.name === newKeyword.trim())
+    ) {
+      setEditedCard({
+        ...editedCard,
+        keywords: [
+          ...(editedCard.keywords || []),
+          {
+            id: Date.now().toString(),
+            name: newKeyword.trim(),
+            cardId: card.id,
+          },
+        ],
+      });
+      setNewKeyword("");
+    }
+  };
+
+  const removeKeyword = (keywordId: string) => {
+    setEditedCard({
+      ...editedCard,
+      keywords: editedCard.keywords?.filter((k) => k.id !== keywordId) || [],
+    });
+  };
+
+  const addFactSource = () => {
+    if (newFactSource.title.trim() && newFactSource.url.trim()) {
+      setEditedCard({
+        ...editedCard,
+        factSources: [
+          ...(editedCard.factSources || []),
+          {
+            id: Date.now().toString(),
+            ...newFactSource,
+            cardId: card.id,
+            screenshot: null,
+          },
+        ],
+      });
+      setNewFactSource({ title: "", url: "", quote: "" });
+    }
+  };
+
+  const removeFactSource = (sourceId: string) => {
+    setEditedCard({
+      ...editedCard,
+      factSources:
+        editedCard.factSources?.filter((s) => s.id !== sourceId) || [],
+    });
   };
 
   return (
@@ -80,15 +171,18 @@ export function CardDialog({
           </DialogHeader>
 
           <Tabs defaultValue="details" className="mt-4">
-            <TabsList className="mb-4 grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="details" className="flex items-center gap-1">
                 <Info className="h-4 w-4" /> Details
               </TabsTrigger>
+              <TabsTrigger value="sources" className="flex items-center gap-1">
+                <Link className="h-4 w-4" /> Sources
+              </TabsTrigger>
               <TabsTrigger
-                value="resources"
+                value="attachments"
                 className="flex items-center gap-1"
               >
-                <FileText className="h-4 w-4" /> Resources
+                <Paperclip className="h-4 w-4" /> Attachments
               </TabsTrigger>
             </TabsList>
 
@@ -107,14 +201,173 @@ export function CardDialog({
                   placeholder="Add detailed notes about this content..."
                 />
               </div>
+
+              <div>
+                <Label>Keywords</Label>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {editedCard.keywords?.map((keyword) => (
+                    <Badge
+                      key={keyword.id}
+                      variant="secondary"
+                      className="flex items-center gap-1"
+                    >
+                      <Tag className="h-3 w-3" />
+                      {keyword.name}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-4 w-4 rounded-full hover:bg-destructive/90 hover:text-destructive-foreground"
+                        onClick={() => removeKeyword(keyword.id)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  ))}
+                </div>
+                <div className="mt-2 flex gap-2">
+                  <Input
+                    value={newKeyword}
+                    onChange={(e) => setNewKeyword(e.target.value)}
+                    placeholder="Add keyword..."
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addKeyword();
+                      }
+                    }}
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={addKeyword}
+                    disabled={!newKeyword.trim()}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </TabsContent>
 
-            <TabsContent value="resources" className="space-y-4">
+            <TabsContent value="sources" className="space-y-4">
               <div>
-                <Label>Resources</Label>
-                <p className="text-sm text-muted-foreground">
-                  Coming soon: Attach files and links to your content.
-                </p>
+                <Label>Fact Sources</Label>
+                <div className="mt-2 space-y-2">
+                  {editedCard.factSources?.map((source) => (
+                    <div
+                      key={source.id}
+                      className="flex items-start justify-between rounded-lg border p-3"
+                    >
+                      <div>
+                        <h4 className="font-medium">{source.title}</h4>
+                        <a
+                          href={source.url || "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-muted-foreground hover:underline"
+                        >
+                          {source.url}
+                        </a>
+                        {source.quote && (
+                          <p className="mt-2 text-sm italic text-muted-foreground">
+                            &quot;{source.quote}&quot;
+                          </p>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeFactSource(source.id)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 space-y-2">
+                  <Input
+                    placeholder="Source title"
+                    value={newFactSource.title}
+                    onChange={(e) =>
+                      setNewFactSource({
+                        ...newFactSource,
+                        title: e.target.value,
+                      })
+                    }
+                  />
+                  <Input
+                    placeholder="URL"
+                    value={newFactSource.url}
+                    onChange={(e) =>
+                      setNewFactSource({
+                        ...newFactSource,
+                        url: e.target.value,
+                      })
+                    }
+                  />
+                  <Textarea
+                    placeholder="Quote (optional)"
+                    value={newFactSource.quote}
+                    onChange={(e) =>
+                      setNewFactSource({
+                        ...newFactSource,
+                        quote: e.target.value,
+                      })
+                    }
+                  />
+                  <Button
+                    onClick={addFactSource}
+                    disabled={
+                      !newFactSource.title.trim() || !newFactSource.url.trim()
+                    }
+                    className="w-full"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Source
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="attachments" className="space-y-4">
+              <div>
+                <Label>Attachments</Label>
+                <div className="mt-2 space-y-2">
+                  {editedCard.attachments?.map((attachment) => (
+                    <div
+                      key={attachment.id}
+                      className="flex items-center justify-between rounded-lg border p-3"
+                    >
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium">{attachment.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {attachment.fileType} • {attachment.provider}
+                          </p>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="icon" asChild>
+                        <a
+                          href={attachment.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Link className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  variant="outline"
+                  className="mt-4 w-full"
+                  onClick={() => {
+                    /* Open cloud file picker */
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Attachment
+                </Button>
               </div>
             </TabsContent>
           </Tabs>
@@ -124,6 +377,7 @@ export function CardDialog({
               variant="destructive"
               onClick={() => setShowDeleteDialog(true)}
             >
+              <Trash2 className="mr-2 h-4 w-4" />
               Delete
             </Button>
             <div className="flex gap-2">
