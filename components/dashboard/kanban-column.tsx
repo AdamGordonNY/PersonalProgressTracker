@@ -11,7 +11,11 @@ import { cn } from "@/lib/utils";
 
 type KanbanColumnProps = {
   column: Column;
-  cards: Card[] & { keywords: Keyword[] };
+  cards: (Card & {
+    keywords: Keyword[];
+    attachments: any[];
+    factSources: any[];
+  })[];
 };
 
 export function KanbanColumn({ column, cards }: KanbanColumnProps) {
@@ -61,7 +65,7 @@ export function KanbanColumn({ column, cards }: KanbanColumnProps) {
           strategy={verticalListSortingStrategy}
         >
           {cards.map((card) => (
-            <KanbanCard key={card.id} card={{ ...card, keywords: [] }} />
+            <KanbanCard key={card.id} card={card} />
           ))}
         </SortableContext>
 
