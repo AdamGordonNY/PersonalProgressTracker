@@ -6,12 +6,12 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { KanbanCard } from "@/components/dashboard/kanban-card";
-import { Card, Column } from "@prisma/client";
+import { Card, Column, Keyword } from "@prisma/client";
 import { cn } from "@/lib/utils";
 
 type KanbanColumnProps = {
   column: Column;
-  cards: Card[];
+  cards: Card[] & { keywords: Keyword[] };
 };
 
 export function KanbanColumn({ column, cards }: KanbanColumnProps) {
@@ -61,7 +61,7 @@ export function KanbanColumn({ column, cards }: KanbanColumnProps) {
           strategy={verticalListSortingStrategy}
         >
           {cards.map((card) => (
-            <KanbanCard key={card.id} card={card} />
+            <KanbanCard key={card.id} card={{ ...card, keywords: [] }} />
           ))}
         </SortableContext>
 
