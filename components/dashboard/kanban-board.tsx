@@ -23,7 +23,8 @@ import { useBoard } from "@/lib/store";
 export function KanbanBoard() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const { columns, cards, reorderCards, reorderColumns } = useBoard();
+  const { columns, cards, reorderCards, reorderColumns, activeBoard } =
+    useBoard();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -151,7 +152,10 @@ export function KanbanBoard() {
           {activeId && (
             <div className="w-[250px]">
               <KanbanCard
-                card={cards.find((card) => card.id === activeId) as Card}
+                card={{
+                  ...(cards.find((card) => card.id === activeId) as Card),
+                  keywords: [],
+                }}
               />
             </div>
           )}

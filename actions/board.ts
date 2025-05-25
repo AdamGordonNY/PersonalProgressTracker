@@ -150,7 +150,15 @@ export const getDefaultBoard = async () => {
       take: 1,
       include: {
         columns: {
-          include: { cards: true },
+          include: {
+            cards: {
+              include: {
+                keywords: true,
+                attachments: true,
+                factSources: true,
+              },
+            },
+          },
           orderBy: { order: "asc" },
         },
       },
