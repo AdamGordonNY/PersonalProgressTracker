@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { kv } from "@vercel/kv";
 
-export const runtime = "edge";
+export const dynamic = "force-dynamic";
 
 export async function POST() {
   try {
