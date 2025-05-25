@@ -5,7 +5,48 @@ import { encrypt, decrypt } from "@/lib/encryption";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { CloudTokens } from "@/lib/types";
 import { User } from "@prisma/client";
+export async function handleUserEvent(userId: string, eventData: any) {
+  try {
+    const client = await clerkClient();
 
+    // Get fresh OAuth tokens from Clerk
+    const [googleTokenRes, microsoftTokenRes] = await Promise.allSettled([
+      client.users.getUserOauthAccessToken(userId, "google"),
+      client.users.getUserOauthAccessToken(userId, "microsoft"),
+    ]);
+
+    const cloudTokens: Record<string, string> = {};
+
+    // Handle Google token
+    if (
+      googleTokenRes.status === "fulfilled" &&
+      googleTokenRes.value.data.length > 0
+    ) {
+      cloudTokens.google = googleTokenRes.value.data[0].token;
+    }
+
+    // Handle Microsoft token
+    if (
+      microsoftTokenRes.status === "fulfilled" &&
+      microsoftTokenRes.value.data.length > 0
+    ) {
+      cloudTokens.microsoft = microsoftTokenRes.value.data[0].token;
+    }
+
+    // Only update if we have valid tokens
+    if (Object.keys(cloudTokens).length > 0) {
+      const updateResult = await updateUserCloudTokens(userId, cloudTokens);
+      if (!updateResult.success) {
+        console.error("Failed to update cloud tokens:", updateResult.error);
+      }
+    }
+
+    // Always update subscription status
+    await updateUserSubscription(userId, "free");
+  } catch (error) {
+    console.error("Error processing user event:", error);
+  }
+}
 export async function updateUserCloudTokens(
   userId: string,
   tokens: CloudTokens

@@ -3,8 +3,7 @@ import { headers } from "next/headers";
 import { WebhookEvent } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
-import { clerkClient } from "@clerk/nextjs/server";
-import { updateUserCloudTokens, updateUserSubscription } from "@/actions/user";
+import { handleUserEvent, updateUserSubscription } from "@/actions/user";
 // app/api/cloud/onedrive/route.ts
 export const runtime = "nodejs"; // Force Node.js runtime
 export async function POST(req: Request) {
@@ -54,7 +53,6 @@ export async function POST(req: Request) {
       ...attributes
     } = evt.data;
     try {
-      const client = await clerkClient();
       // Get connected cloud providers
       const user = await db.user.create({
         data: {
@@ -90,27 +88,28 @@ export async function POST(req: Request) {
           })
         )
       );
-      const googleToken = await client.users.getUserOauthAccessToken(
-        id,
-        "google"
-      );
-      const microsoftToken = await client.users.getUserOauthAccessToken(
-        id,
-        "microsoft"
-      );
-      const cloudTokens: Record<string, string> = {};
-      if (googleToken) {
-        cloudTokens.google = googleToken.data[0]?.token;
-      }
-      if (microsoftToken) {
-        cloudTokens.microsoft = microsoftToken.data[0]?.token;
-      }
-      // Extract tokens from external accounts
+      await handleUserEvent(id, evt.data);
+      // const googleToken = await client.users.getUserOauthAccessToken(
+      //   id,
+      //   "google"
+      // );
+      // const microsoftToken = await client.users.getUserOauthAccessToken(
+      //   id,
+      //   "microsoft"
+      // );
+      // const cloudTokens: Record<string, string> = {};
+      // if (googleToken) {
+      //   cloudTokens.google = googleToken.data[0]?.token;
+      // }
+      // if (microsoftToken) {
+      //   cloudTokens.microsoft = microsoftToken.data[0]?.token;
+      // }
+      // // Extract tokens from external accounts
 
-      // Update database with encrypted tokens
-      if (Object.keys(cloudTokens).length > 0) {
-        await updateUserCloudTokens(id, cloudTokens);
-      }
+      // // Update database with encrypted tokens
+      // if (Object.keys(cloudTokens).length > 0) {
+      //   await updateUserCloudTokens(id, cloudTokens);
+      // }
 
       // Set default subscription tier
       await updateUserSubscription(id, "free");
@@ -122,7 +121,6 @@ export async function POST(req: Request) {
   }
 
   if (eventType === "user.updated") {
-    const client = await clerkClient();
     const { id, email_addresses, ...attributes } = evt.data;
 
     await db.user.update({
@@ -134,27 +132,28 @@ export async function POST(req: Request) {
           null,
       },
     });
-    const googleToken = await client.users.getUserOauthAccessToken(
-      id,
-      "google"
-    );
-    const microsoftToken = await client.users.getUserOauthAccessToken(
-      id,
-      "microsoft"
-    );
-    const cloudTokens: Record<string, string> = {};
-    if (googleToken) {
-      cloudTokens.google = googleToken.data[0]?.token;
-    }
-    if (microsoftToken) {
-      cloudTokens.microsoft = microsoftToken.data[0]?.token;
-    }
-    // Extract tokens from external accounts
+    await handleUserEvent(id, evt.data);
+    // const googleToken = await client.users.getUserOauthAccessToken(
+    //   id,
+    //   "google"
+    // );
+    // const microsoftToken = await client.users.getUserOauthAccessToken(
+    //   id,
+    //   "microsoft"
+    // );
+    // const cloudTokens: Record<string, string> = {};
+    // if (googleToken) {
+    //   cloudTokens.google = googleToken.data[0]?.token;
+    // }
+    // if (microsoftToken) {
+    //   cloudTokens.microsoft = microsoftToken.data[0]?.token;
+    // }
+    // // Extract tokens from external accounts
 
-    // Update database with encrypted tokens
-    if (Object.keys(cloudTokens).length > 0) {
-      await updateUserCloudTokens(id, cloudTokens);
-    }
+    // // Update database with encrypted tokens
+    // if (Object.keys(cloudTokens).length > 0) {
+    //   await updateUserCloudTokens(id, cloudTokens);
+    // }
     return NextResponse.json({ message: "User updated" }, { status: 200 });
   }
 

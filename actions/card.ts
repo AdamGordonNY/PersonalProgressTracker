@@ -24,8 +24,8 @@ export async function createCard(data: {
         title: data.title,
         description: data.description,
         columnId: data.columnId,
+        userId,
         order: (lastCard?.order ?? -1) + 1,
-        userId: userId,
         keywords: {
           create: data.keywords.map((name) => ({
             name,
@@ -54,6 +54,11 @@ export async function updateCard(
     description?: string;
     columnId?: string;
     keywords?: string[];
+    factSources?: Array<{
+      title: string;
+      url?: string;
+      quote?: string;
+    }>;
   }
 ) {
   try {
@@ -61,7 +66,7 @@ export async function updateCard(
     if (!userId) throw new Error("Unauthorized");
 
     const card = await db.card.update({
-      where: { id: cardId },
+      where: { id: cardId, userId },
       data: {
         ...data,
         keywords: data.keywords
@@ -69,6 +74,15 @@ export async function updateCard(
               deleteMany: {},
               create: data.keywords.map((name) => ({
                 name,
+                user: { connect: { id: userId } },
+              })),
+            }
+          : undefined,
+        factSources: data.factSources
+          ? {
+              deleteMany: {},
+              create: data.factSources.map((factSource) => ({
+                ...factSource,
                 user: { connect: { id: userId } },
               })),
             }
