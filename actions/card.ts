@@ -140,3 +140,28 @@ export async function reorderCards(
     return { error: "Failed to reorder cards" };
   }
 }
+export async function searchKeywords(query: string) {
+  try {
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+
+    const keywords = await db.keyword.findMany({
+      where: {
+        name: {
+          contains: query,
+          mode: "insensitive",
+        },
+        card: {
+          userId,
+        },
+      },
+      include: {
+        card: true,
+      },
+    });
+
+    return { keywords };
+  } catch (error) {
+    return { error: "Failed to search keywords" };
+  }
+}

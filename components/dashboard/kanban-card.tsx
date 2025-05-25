@@ -7,11 +7,13 @@ import { Card } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
 import { CardDialog } from "@/components/dashboard/card-dialog";
 import { Card as CardUI, CardContent } from "@/components/ui/card";
-import { Paperclip, Link } from "lucide-react";
+import { Tag } from "lucide-react";
 import { useBoard } from "@/lib/store";
 
 interface KanbanCardProps {
-  card: Card;
+  card: Card & {
+    keywords: { id: string; name: string }[];
+  };
 }
 
 export function KanbanCard({ card }: KanbanCardProps) {
@@ -56,11 +58,31 @@ export function KanbanCard({ card }: KanbanCardProps) {
               {card.description}
             </p>
           )}
+          {card.keywords && card.keywords.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {card.keywords.map((keyword) => (
+                <Badge
+                  key={keyword.id}
+                  variant="secondary"
+                  className="flex items-center gap-1 text-xs"
+                >
+                  <Tag className="h-3 w-3" />
+                  {keyword.name}
+                </Badge>
+              ))}
+            </div>
+          )}
         </CardContent>
       </CardUI>
 
       <CardDialog
-        card={card}
+        card={{
+          ...card,
+          keywords: card.keywords?.map((keyword) => ({
+            ...keyword,
+            cardId: card.id,
+          })),
+        }}
         open={open}
         onOpenChange={setOpen}
         onUpdateCard={updateCard}

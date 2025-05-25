@@ -8,10 +8,12 @@ import { Layers, Search, Settings } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useBoard } from "@/lib/store";
 import Link from "next/link";
+import { BoardEditorDialog } from "./board-editor-dialog";
 
 export function DashboardHeader() {
   const [searchQuery, setSearchQuery] = useState("");
   const { activeBoard } = useBoard();
+  const [showBoardEditor, setShowBoardEditor] = useState(false);
 
   return (
     <header className="sticky top-0 z-10 border-b bg-background">
@@ -19,11 +21,15 @@ export function DashboardHeader() {
         <div className="flex items-center gap-2 md:gap-4">
           <div className="flex items-center gap-2">
             <Layers className="h-6 w-6 text-sage-600" />
-            <span className="text-xl font-semibold">
+            <Button
+              variant="ghost"
+              className="text-xl font-semibold"
+              onClick={() => setShowBoardEditor(true)}
+            >
               {activeBoard?.title || "Content Board"}
-            </span>
+            </Button>
           </div>
-          <nav className="hidden md:flex items-center space-x-4 ml-4">
+          <nav className="ml-4 hidden items-center space-x-4 md:flex">
             <Link
               href="/dashboard"
               className="text-sm font-medium hover:text-primary"
@@ -70,6 +76,11 @@ export function DashboardHeader() {
           <UserButton afterSignOutUrl="/" />
         </div>
       </div>
+
+      <BoardEditorDialog
+        open={showBoardEditor}
+        onOpenChange={setShowBoardEditor}
+      />
     </header>
   );
 }
