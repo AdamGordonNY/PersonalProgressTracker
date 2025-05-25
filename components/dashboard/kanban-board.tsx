@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import {
   DndContext,
@@ -15,7 +13,7 @@ import { SortableContext } from "@dnd-kit/sortable";
 import { KanbanColumn } from "@/components/dashboard/kanban-column";
 import { KanbanCard } from "@/components/dashboard/kanban-card";
 import { AddCardDialog } from "@/components/dashboard/add-card-dialog";
-import { Card } from "@prisma/client";
+import { Card } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useBoard } from "@/lib/store";
@@ -23,8 +21,7 @@ import { useBoard } from "@/lib/store";
 export function KanbanBoard() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const { columns, cards, reorderCards, reorderColumns, activeBoard } =
-    useBoard();
+  const { columns, cards, reorderCards, reorderColumns } = useBoard();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -152,10 +149,7 @@ export function KanbanBoard() {
           {activeId && (
             <div className="w-[250px]">
               <KanbanCard
-                card={{
-                  ...(cards.find((card) => card.id === activeId) as Card),
-                  keywords: [],
-                }}
+                card={cards.find((card) => card.id === activeId) as Card}
               />
             </div>
           )}
