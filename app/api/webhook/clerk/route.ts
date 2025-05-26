@@ -4,96 +4,134 @@ import { WebhookEvent } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { handleUserEvent, updateUserSubscription } from "@/actions/user";
-import { getMicrosoftToken } from "@/lib/encryption";
-// app/api/cloud/onedrive/route.ts
-export const runtime = "nodejs"; // Force Node.js runtime
+import { getMicrosoftToken, redisClient } from "@/lib/encryption";
+
+const MAX_REQUESTS_PER_MINUTE = 100;
+
+export const runtime = "nodejs";
+
 export async function POST(req: Request) {
-  // Get the headers
-  const headerPayload = headers();
-  const svix_id = headerPayload.get("svix-id");
-  const svix_timestamp = headerPayload.get("svix-timestamp");
-  const svix_signature = headerPayload.get("svix-signature");
-
-  // If there are no headers, error out
-  if (!svix_id || !svix_timestamp || !svix_signature) {
-    return new NextResponse("Error occured -- no svix headers", {
-      status: 400,
-    });
-  }
-
-  // Get the body
-  const payload = await req.json();
-  const body = JSON.stringify(payload);
-
-  // Create a new Svix instance with your webhook secret
-  const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET || "");
-
-  let evt: WebhookEvent;
-
-  // Verify the webhook payload
   try {
-    evt = wh.verify(body, {
+    // Rate limiting
+    const ip = headers().get("x-forwarded-for");
+    const rateKey = `rate-limit:${ip}`;
+    const count = await redisClient.incr(rateKey);
+    if (count === 1) await redisClient.expire(rateKey, 60);
+    if (count > MAX_REQUESTS_PER_MINUTE) {
+      console.warn(`Rate limit exceeded for IP: ${ip}`);
+      return NextResponse.json(
+        { error: "Rate limit exceeded" },
+        { status: 429 }
+      );
+    }
+
+    // Header validation
+    const headerPayload = headers();
+    const svix_id = headerPayload.get("svix-id");
+    const svix_timestamp = headerPayload.get("svix-timestamp");
+    const svix_signature = headerPayload.get("svix-signature");
+
+    if (!svix_id || !svix_timestamp || !svix_signature) {
+      console.error("Missing Svix headers");
+      return NextResponse.json("Missing required headers", { status: 400 });
+    }
+
+    // Process payload
+    const payload = await req.json();
+    console.log("Webhook received:", JSON.stringify(payload, null, 2));
+
+    const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET || "");
+    const evt = wh.verify(JSON.stringify(payload), {
       "svix-id": svix_id,
       "svix-timestamp": svix_timestamp,
       "svix-signature": svix_signature,
     }) as WebhookEvent;
-  } catch (err) {
-    console.error("Error verifying webhook:", err);
-    return new NextResponse("Error occured", { status: 400 });
-  }
 
-  // Handle the webhook
-  const eventType = evt.type;
-  console.log("Received webhook event:", eventType, evt.data);
-  if (evt.type === "session.created") {
-    const { user_id } = evt.data;
-    let user = await db.user.findFirst({
-      where: { id: user_id },
-      include: {
-        UserMicrosoftToken: true,
-        UserGoogleToken: true,
-      },
-    });
-    try {
-      if (!user?.UserMicrosoftToken) {
-        const msToken = await getMicrosoftToken(user_id);
-        console.log("Microsoft token retrieved:", msToken);
-        // Store token in session cookie
-        const response = NextResponse.json({ success: true });
-        response.cookies.set("ms_token", msToken || "", {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "strict",
-        });
+    console.log(`Processing event: ${evt.type}`);
 
-        return response;
-      }
-    } catch (error) {
-      console.error("Session token retrieval failed:", error);
+    // Handle specific event types
+    switch (evt.type) {
+      case "session.created":
+        return handleSessionCreated(evt.data);
+
+      case "user.created":
+        return handleUserCreated(evt.data);
+
+      case "user.updated":
+        return handleUserUpdated(evt.data);
+
+      case "user.deleted":
+        return handleUserDeleted(evt.data);
+
+      default:
+        console.warn(`Unhandled event type: ${evt.type}`);
+        return NextResponse.json(
+          { error: "Unhandled event type" },
+          { status: 501 }
+        );
     }
+  } catch (error) {
+    console.error("Webhook processing failed:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  } finally {
+    await db.$disconnect();
   }
-  if (eventType === "user.created") {
-    const {
-      id,
-      email_addresses,
-      external_accounts,
-      external_id,
-      ...attributes
-    } = evt.data;
-    try {
-      // Get connected cloud providers
-      const user = await db.user.create({
+}
+
+async function handleSessionCreated(eventData: any) {
+  try {
+    const { user_id } = eventData;
+    const user = await db.user.findUnique({
+      where: { id: user_id },
+      include: { UserMicrosoftToken: true },
+    });
+
+    if (!user?.UserMicrosoftToken) {
+      const msToken = await getMicrosoftToken(user_id);
+      console.log("Retrieved Microsoft token for user:", user_id);
+
+      const response = NextResponse.json({ success: true });
+      response.cookies.set("ms_token", msToken || "", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+      });
+
+      return response;
+    }
+
+    return NextResponse.json(
+      { status: "Token already exists" },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Session creation failed:", error);
+    return NextResponse.json(
+      { error: "Session processing failed" },
+      { status: 500 }
+    );
+  }
+}
+
+async function handleUserCreated(eventData: any) {
+  try {
+    const { id, email_addresses, first_name, last_name } = eventData;
+
+    // Create user with transaction
+    const result = await db.$transaction(async (tx) => {
+      const user = await tx.user.create({
         data: {
-          id: id,
+          id,
           email: email_addresses[0]?.email_address,
-          name:
-            `${evt.data.first_name || ""} ${evt.data.last_name || ""}`.trim() ||
-            null,
+          name: `${first_name || ""} ${last_name || ""}`.trim() || null,
         },
       });
 
-      // Create default board
-      const board = await db.board.create({
+      // Create default board structure
+      const board = await tx.board.create({
         data: {
           title: "My First Board",
           description: "Welcome to your content board!",
@@ -103,97 +141,63 @@ export async function POST(req: Request) {
       });
 
       // Create default columns
-      const defaultColumns = ["Ideas", "Research", "In Progress", "Done"];
-      await Promise.all(
-        defaultColumns.map((title, index) =>
-          db.column.create({
-            data: {
-              userId: user.id,
-              title,
-              order: index,
-              boardId: board.id,
-            },
-          })
-        )
+      const columns = ["Ideas", "Research", "In Progress", "Done"].map(
+        (title, index) => ({
+          title,
+          order: index,
+          boardId: board.id,
+          userId: user.id,
+        })
       );
-      await handleUserEvent(id, evt.data);
-      // const googleToken = await client.users.getUserOauthAccessToken(
-      //   id,
-      //   "google"
-      // );
-      // const microsoftToken = await client.users.getUserOauthAccessToken(
-      //   id,
-      //   "microsoft"
-      // );
-      // const cloudTokens: Record<string, string> = {};
-      // if (googleToken) {
-      //   cloudTokens.google = googleToken.data[0]?.token;
-      // }
-      // if (microsoftToken) {
-      //   cloudTokens.microsoft = microsoftToken.data[0]?.token;
-      // }
-      // // Extract tokens from external accounts
 
-      // // Update database with encrypted tokens
-      // if (Object.keys(cloudTokens).length > 0) {
-      //   await updateUserCloudTokens(id, cloudTokens);
-      // }
+      await tx.column.createMany({ data: columns });
 
-      // Set default subscription tier
-      await updateUserSubscription(id, "free");
-    } catch (error) {
-      console.error("Webhook processing error:", error);
-    }
+      return user;
+    });
 
-    return NextResponse.json({ message: "User created" }, { status: 201 });
+    await handleUserEvent(result.id, eventData);
+    await updateUserSubscription(result.id, "free");
+
+    return NextResponse.json({ success: true }, { status: 201 });
+  } catch (error) {
+    console.error("User creation failed:", error);
+    return NextResponse.json(
+      { error: "User creation failed" },
+      { status: 500 }
+    );
   }
+}
 
-  if (eventType === "user.updated") {
-    const { id, email_addresses, ...attributes } = evt.data;
+async function handleUserUpdated(eventData: any) {
+  try {
+    const { id, email_addresses, first_name, last_name } = eventData;
 
     await db.user.update({
-      where: { id: id },
+      where: { id },
       data: {
         email: email_addresses[0]?.email_address,
-        name:
-          `${attributes.first_name || ""} ${attributes.last_name || ""}`.trim() ||
-          null,
+        name: `${first_name || ""} ${last_name || ""}`.trim() || null,
       },
     });
-    await handleUserEvent(id, evt.data);
-    // const googleToken = await client.users.getUserOauthAccessToken(
-    //   id,
-    //   "google"
-    // );
-    // const microsoftToken = await client.users.getUserOauthAccessToken(
-    //   id,
-    //   "microsoft"
-    // );
-    // const cloudTokens: Record<string, string> = {};
-    // if (googleToken) {
-    //   cloudTokens.google = googleToken.data[0]?.token;
-    // }
-    // if (microsoftToken) {
-    //   cloudTokens.microsoft = microsoftToken.data[0]?.token;
-    // }
-    // // Extract tokens from external accounts
 
-    // // Update database with encrypted tokens
-    // if (Object.keys(cloudTokens).length > 0) {
-    //   await updateUserCloudTokens(id, cloudTokens);
-    // }
-    return NextResponse.json({ message: "User updated" }, { status: 200 });
+    await handleUserEvent(id, eventData);
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error) {
+    console.error("User update failed:", error);
+    return NextResponse.json({ error: "User update failed" }, { status: 500 });
   }
+}
 
-  if (eventType === "user.deleted") {
-    const { id } = evt.data;
-
-    await db.user.delete({
-      where: { id: id },
-    });
-
-    return NextResponse.json({ message: "User deleted" }, { status: 200 });
+async function handleUserDeleted(eventData: any) {
+  try {
+    const { id } = eventData;
+    await db.user.delete({ where: { id } });
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error) {
+    console.error("User deletion failed:", error);
+    return NextResponse.json(
+      { error: "User deletion failed" },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({ message: "Webhook received" }, { status: 200 });
 }
