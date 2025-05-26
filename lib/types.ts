@@ -111,3 +111,15 @@ export interface Feed {
   lastHash: string | null;
   entries: FeedEntry[];
 }
+// types.ts
+declare module "@clerk/nextjs/server" {
+  interface PublicMetadata {
+    cloudAccess: {
+      google: boolean;
+      microsoft: boolean;
+    };
+    tokenHash?: string | null;
+    microsoftVerified?: boolean;
+    lastTokenRefresh?: string;
+  }
+}

@@ -3,8 +3,13 @@ import { headers } from "next/headers";
 import { WebhookEvent } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
-import { handleUserEvent, updateUserSubscription } from "@/actions/user";
-import { getMicrosoftToken, redisClient } from "@/lib/encryption";
+import {
+  handleSessionCreated,
+  handleUserCreated,
+  handleUserDeleted,
+  handleUserUpdated,
+} from "@/actions/user";
+import { redisClient } from "@/lib/encryption";
 
 const MAX_REQUESTS_PER_MINUTE = 100;
 
@@ -78,126 +83,5 @@ export async function POST(req: Request) {
     );
   } finally {
     await db.$disconnect();
-  }
-}
-
-async function handleSessionCreated(eventData: any) {
-  try {
-    const { user_id } = eventData;
-    const user = await db.user.findUnique({
-      where: { id: user_id },
-      include: { UserMicrosoftToken: true },
-    });
-
-    if (!user?.UserMicrosoftToken) {
-      const msToken = await getMicrosoftToken(user_id);
-      console.log("Retrieved Microsoft token for user:", user_id);
-
-      const response = NextResponse.json({ success: true });
-      response.cookies.set("ms_token", msToken || "", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-      });
-
-      return response;
-    }
-
-    return NextResponse.json(
-      { status: "Token already exists" },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error("Session creation failed:", error);
-    return NextResponse.json(
-      { error: "Session processing failed" },
-      { status: 500 }
-    );
-  }
-}
-
-async function handleUserCreated(eventData: any) {
-  try {
-    const { id, email_addresses, first_name, last_name } = eventData;
-
-    // Create user with transaction
-    const result = await db.$transaction(async (tx) => {
-      const user = await tx.user.create({
-        data: {
-          id,
-          email: email_addresses[0]?.email_address,
-          name: `${first_name || ""} ${last_name || ""}`.trim() || null,
-        },
-      });
-
-      // Create default board structure
-      const board = await tx.board.create({
-        data: {
-          title: "My First Board",
-          description: "Welcome to your content board!",
-          order: 0,
-          userId: user.id,
-        },
-      });
-
-      // Create default columns
-      const columns = ["Ideas", "Research", "In Progress", "Done"].map(
-        (title, index) => ({
-          title,
-          order: index,
-          boardId: board.id,
-          userId: user.id,
-        })
-      );
-
-      await tx.column.createMany({ data: columns });
-
-      return user;
-    });
-
-    await handleUserEvent(result.id, eventData);
-    await updateUserSubscription(result.id, "free");
-
-    return NextResponse.json({ success: true }, { status: 201 });
-  } catch (error) {
-    console.error("User creation failed:", error);
-    return NextResponse.json(
-      { error: "User creation failed" },
-      { status: 500 }
-    );
-  }
-}
-
-async function handleUserUpdated(eventData: any) {
-  try {
-    const { id, email_addresses, first_name, last_name } = eventData;
-
-    await db.user.update({
-      where: { id },
-      data: {
-        email: email_addresses[0]?.email_address,
-        name: `${first_name || ""} ${last_name || ""}`.trim() || null,
-      },
-    });
-
-    await handleUserEvent(id, eventData);
-    return NextResponse.json({ success: true }, { status: 200 });
-  } catch (error) {
-    console.error("User update failed:", error);
-    return NextResponse.json({ error: "User update failed" }, { status: 500 });
-  }
-}
-
-async function handleUserDeleted(eventData: any) {
-  try {
-    const { id } = eventData;
-    await db.user.delete({ where: { id } });
-    return NextResponse.json({ success: true }, { status: 200 });
-  } catch (error) {
-    console.error("User deletion failed:", error);
-    return NextResponse.json(
-      { error: "User deletion failed" },
-      { status: 500 }
-    );
   }
 }
