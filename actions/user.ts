@@ -10,7 +10,6 @@ import {
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { CloudTokens } from "@/lib/types";
 import { NextResponse } from "next/server";
-import nodeCrypto from "node:crypto";
 
 export async function handleUserEvent(userId: string, eventData: any) {
   try {
@@ -100,14 +99,14 @@ export async function updateUserCloudTokens(
 
 // lib/security.ts
 
-export function createTokenHash(token: string | undefined) {
-  if (!token) return null;
+// export function createTokenHash(token: string | undefined) {
+//   if (!token) return null;
 
-  return nodeCrypto
-    .createHash("sha256")
-    .update(token + process.env.ENCRYPTION_KEY!)
-    .digest("hex");
-}
+//   return nodeCrypto
+//     .createHash("sha256")
+//     .update(token + process.env.ENCRYPTION_KEY!)
+//     .digest("hex");
+// }
 export async function getUserCloudTokens(userId: string) {
   try {
     const user = await db.user.findUnique({
