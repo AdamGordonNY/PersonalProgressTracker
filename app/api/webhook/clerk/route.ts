@@ -18,6 +18,9 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   try {
     // Rate limiting
+    if (!redisClient.isOpen) {
+      await redisClient.connect();
+    }
     const ip = headers().get("x-forwarded-for");
     const rateKey = `rate-limit:${ip}`;
     const count = await redisClient.incr(rateKey);
@@ -45,7 +48,7 @@ export async function POST(req: Request) {
     const payload = await req.json();
     console.log("Webhook received:", JSON.stringify(payload, null, 2));
 
-    const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET || "");
+    const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET! || "");
     const evt = wh.verify(JSON.stringify(payload), {
       "svix-id": svix_id,
       "svix-timestamp": svix_timestamp,
