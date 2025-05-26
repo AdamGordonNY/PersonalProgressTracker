@@ -292,7 +292,7 @@ export async function handleUserCreated(eventData: any) {
       return user;
     });
 
-    await handleUserEvent(result.id, eventData);
+    await createOrUpdateUserToken({ userId: result.id });
     await updateUserSubscription(result.id, "free");
 
     return NextResponse.json({ success: true }, { status: 201 });
@@ -317,7 +317,7 @@ export async function handleUserUpdated(eventData: any) {
       },
     });
 
-    await handleUserEvent(id, eventData);
+    await createOrUpdateUserToken({ userId: id });
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error("User update failed:", error);
