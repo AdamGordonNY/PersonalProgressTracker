@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { encrypt, decrypt } from "@/lib/encryption";
+import { encrypt, decrypt, setMicrosoftToken } from "@/lib/encryption";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { CloudTokens } from "@/lib/types";
 import { User } from "@prisma/client";
@@ -149,4 +149,43 @@ export async function getUserCards() {
     return null;
   }
 }
-export async function createOrUpdateUser() {}
+export async function createOrUpdateUserToken({ userId }: { userId: string }) {
+  try {
+    const client = await clerkClient();
+    const user = await db.user.findFirstOrThrow({
+      where: { id: userId! },
+      include: {
+        UserMicrosoftToken: true,
+        UserGoogleToken: true,
+      },
+    });
+    if (!user?.UserMicrosoftToken) {
+      const [googleTokenRes, microsoftTokenRes] = await Promise.allSettled([
+        client.users.getUserOauthAccessToken(userId!, "google"),
+        client.users.getUserOauthAccessToken(userId!, "microsoft"),
+      ]);
+      await setMicrosoftToken(
+        userId!,
+        microsoftTokenRes.status === "fulfilled" &&
+          microsoftTokenRes.value.data.length > 0
+          ? microsoftTokenRes.value.data[0].token
+          : ""
+      );
+
+      await db.userMicrosoftToken.create({
+        data: {
+          userId: userId!,
+          accessToken:
+            microsoftTokenRes.status === "fulfilled" &&
+            microsoftTokenRes.value.data.length > 0
+              ? microsoftTokenRes.value.data[0].token
+              : "",
+          refreshToken: "",
+          expiresAt: new Date(0),
+        },
+      });
+    }
+  } catch (error) {
+    console.error("Error creating or updating user:", error);
+  }
+}

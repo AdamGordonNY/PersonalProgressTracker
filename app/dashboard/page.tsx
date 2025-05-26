@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Dashboard from "@/components/dashboard/dashboard";
+import { createOrUpdateUserToken } from "@/actions/user";
 
 export default async function DashboardPage() {
   const { userId } = await auth();

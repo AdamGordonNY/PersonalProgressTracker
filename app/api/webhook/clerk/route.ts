@@ -4,6 +4,7 @@ import { WebhookEvent } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { handleUserEvent, updateUserSubscription } from "@/actions/user";
+import { getMicrosoftToken } from "@/lib/encryption";
 // app/api/cloud/onedrive/route.ts
 export const runtime = "nodejs"; // Force Node.js runtime
 export async function POST(req: Request) {
@@ -43,7 +44,33 @@ export async function POST(req: Request) {
 
   // Handle the webhook
   const eventType = evt.type;
+  if (evt.type === "session.created") {
+    const { user_id } = evt.data;
+    let user = await db.user.findFirst({
+      where: { id: user_id },
+      include: {
+        UserMicrosoftToken: true,
+        UserGoogleToken: true,
+      },
+    });
+    try {
+      if (!user?.UserMicrosoftToken) {
+        const msToken = await getMicrosoftToken(user_id);
+        console.log("Microsoft token retrieved:", msToken);
+        // Store token in session cookie
+        const response = NextResponse.json({ success: true });
+        response.cookies.set("ms_token", msToken || "", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "strict",
+        });
 
+        return response;
+      }
+    } catch (error) {
+      console.error("Session token retrieval failed:", error);
+    }
+  }
   if (eventType === "user.created") {
     const {
       id,

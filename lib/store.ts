@@ -14,7 +14,7 @@ interface BoardState {
   error: string | null;
   isReordering: boolean;
 
-  getDefaultBoard: () => Promise<void>;
+  getDefaultBoard: () => Promise<Board[] | void>;
 
   // Board actions
   fetchBoards: () => Promise<Board[] | void>;

@@ -11,6 +11,7 @@ export async function getBoards() {
 
     const boards = await db.board.findMany({
       where: { userId },
+      include: { columns: true },
       orderBy: { order: "asc" },
     });
 
