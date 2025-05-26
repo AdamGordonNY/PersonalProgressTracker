@@ -44,6 +44,7 @@ export async function POST(req: Request) {
 
   // Handle the webhook
   const eventType = evt.type;
+  console.log("Received webhook event:", eventType, evt.data);
   if (evt.type === "session.created") {
     const { user_id } = evt.data;
     let user = await db.user.findFirst({
