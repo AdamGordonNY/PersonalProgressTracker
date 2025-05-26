@@ -81,8 +81,10 @@ export async function updateCard(
         factSources: data.factSources
           ? {
               deleteMany: {},
-              create: data.factSources.map((factSource) => ({
-                ...factSource,
+              create: data.factSources.map((source) => ({
+                title: source.title,
+                url: source.url || "",
+                quote: source.quote || "",
                 user: { connect: { id: userId } },
               })),
             }
