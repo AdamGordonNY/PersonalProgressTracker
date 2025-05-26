@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Board, Column } from "@prisma/client";
+import { Board, Column, User } from "@prisma/client";
 import { Card } from "@/lib/types";
 import * as boardActions from "@/actions/board";
 import * as columnActions from "@/actions/column";
@@ -13,6 +13,7 @@ interface BoardState {
   isLoading: boolean;
   error: string | null;
   isReordering: boolean;
+  user: User | null;
 
   getDefaultBoard: () => Promise<Board[] | void>;
 
@@ -68,6 +69,7 @@ export const useBoard = create<BoardState>((set, get) => ({
   isLoading: false,
   error: null,
   isReordering: false,
+  user: null,
   getDefaultBoard: async () => {
     set({ isLoading: true, error: null });
     try {
@@ -260,12 +262,51 @@ export const useBoard = create<BoardState>((set, get) => ({
   },
 
   updateCard: async (cardId, data) => {
+    // Optimistically update the UI
+    const currentCards = [...get().cards];
+    const updatedCard = currentCards.find((c) => c.id === cardId);
+
+    if (updatedCard) {
+      set({
+        cards: currentCards.map((card) =>
+          card.id === cardId
+            ? {
+                ...card,
+                ...data,
+                keywords: data.keywords
+                  ? data.keywords.map((name) => ({
+                      id: "",
+                      name,
+                      cardId,
+                      userId: card.keywords[0]?.userId ?? "", // Use existing userId or empty string
+                    }))
+                  : card.keywords,
+                factSources: data.factSources
+                  ? data.factSources.map((source) => ({
+                      id: "",
+                      cardId,
+                      title: source.title,
+                      userId: card.factSources?.[0]?.userId ?? "", // Use existing userId or empty string
+                      url: source.url ?? null,
+                      quote: source.quote ?? null,
+                      screenshot: card.factSources?.[0]?.screenshot ?? null, // Use existing screenshot or null
+                    }))
+                  : card.factSources,
+              }
+            : card
+        ),
+      });
+    }
+
     const result = await cardActions.updateCard(cardId, data);
     if ("error" in result) {
+      // Revert on error
+      set({ cards: currentCards, error: result.error });
       set({ error: result.error });
       return;
     }
     if (get().activeBoard?.id) {
+    } else if (get().activeBoard?.id) {
       await get().setActiveBoard(get().activeBoard?.id!);
     }
   },

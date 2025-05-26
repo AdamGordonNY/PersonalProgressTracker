@@ -47,6 +47,8 @@ import {
   Tag,
   X,
   Paperclip,
+  Loader2,
+  Save,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -65,7 +67,12 @@ interface CardDialogProps {
   onOpenChange: (open: boolean) => void;
   onUpdateCard: (
     cardId: string,
-    data: { title: string; description?: string; keywords?: string[] }
+    data: {
+      title: string;
+      description?: string;
+      keywords?: string[];
+      factSources?: { title: string; url: string; quote?: string }[];
+    }
   ) => void;
   onDeleteCard: (cardId: string) => void;
 }
@@ -84,14 +91,23 @@ export function CardDialog({
     url: "",
     quote: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const handleSave = () => {
+    setIsSubmitting(true);
     onUpdateCard(card.id, {
       title: editedCard.title,
       description: editedCard.description!,
       keywords: editedCard.keywords?.map((k) => k.name) || [],
+      factSources:
+        editedCard.factSources?.map((s) => ({
+          title: s.title,
+          url: s.url || "",
+          quote: s.quote || "",
+        })) || [],
     });
+    setIsSubmitting(false);
     onOpenChange(false);
   };
 
@@ -136,7 +152,9 @@ export function CardDialog({
           ...(editedCard.factSources || []),
           {
             id: Date.now().toString(),
-            ...newFactSource,
+            title: newFactSource.title.trim(),
+            url: newFactSource.url.trim(),
+            quote: newFactSource.quote.trim(),
             cardId: card.id,
             screenshot: null,
           },
@@ -384,11 +402,20 @@ export function CardDialog({
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
+
               <Button
                 onClick={handleSave}
                 className="bg-sage-600 hover:bg-sage-700"
+                disabled={isSubmitting}
               >
-                Save Changes
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>Save Changes</>
+                )}
               </Button>
             </div>
           </div>
