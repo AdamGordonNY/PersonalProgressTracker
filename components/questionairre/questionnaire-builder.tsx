@@ -195,6 +195,128 @@ export function QuestionnaireBuilder({
     }
   };
 
+  // Preview Card Component
+  const PreviewCard = () => (
+    <Card className="h-full">
+      <CardContent className="pt-6">
+        <div className="mx-auto max-w-lg space-y-6">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold">
+              {title || "Untitled Questionnaire"}
+            </h2>
+            {description && (
+              <p className="mt-2 text-muted-foreground">{description}</p>
+            )}
+          </div>
+
+          <div className="space-y-6">
+            {questions.map((question, index) => (
+              <div key={index} className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <p className="font-medium">
+                    {index + 1}. {question.text}
+                  </p>
+                  {question.required && (
+                    <Badge variant="outline" className="text-red-500">
+                      Required
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Different input types based on question type */}
+                {question.type === QuestionType.TEXT && (
+                  <Textarea
+                    placeholder="Your answer"
+                    className="min-h-[80px]"
+                    disabled
+                  />
+                )}
+
+                {question.type === QuestionType.MULTIPLE_CHOICE && (
+                  <div className="space-y-2">
+                    {question.options.map((option, optIndex) => (
+                      <div
+                        key={optIndex}
+                        className="flex items-center space-x-2"
+                      >
+                        <input type="radio" disabled />
+                        <Label>{option}</Label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {question.type === QuestionType.CHECKBOX && (
+                  <div className="space-y-2">
+                    {question.options.map((option, optIndex) => (
+                      <div
+                        key={optIndex}
+                        className="flex items-center space-x-2"
+                      >
+                        <input type="checkbox" disabled />
+                        <Label>{option}</Label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {question.type === QuestionType.RATING && (
+                  <div className="flex space-x-2">
+                    {[1, 2, 3, 4, 5].map((rating) => (
+                      <Button key={rating} variant="outline" size="sm" disabled>
+                        {rating}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+
+                {question.type === QuestionType.DATE && (
+                  <Input type="date" disabled />
+                )}
+
+                {question.type === QuestionType.SLIDER && (
+                  <div className="space-y-2">
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      className="w-full"
+                      disabled
+                    />
+                    <div className="flex justify-between text-xs">
+                      <span>0</span>
+                      <span>50</span>
+                      <span>100</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {questions.length > 0 && (
+            <Button className="w-full" disabled>
+              Submit
+            </Button>
+          )}
+
+          {questions.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <p className="text-muted-foreground">No questions added yet</p>
+              <Button
+                variant="link"
+                onClick={() => setActiveTab("edit")}
+                className="mt-2"
+              >
+                Add some questions to see the preview
+              </Button>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -205,22 +327,6 @@ export function QuestionnaireBuilder({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Tabs
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className="w-[400px]"
-          >
-            <TabsList className="grid grid-cols-2">
-              <TabsTrigger value="edit" className="flex items-center gap-2">
-                <PenSquare className="h-4 w-4" />
-                Edit
-              </TabsTrigger>
-              <TabsTrigger value="preview" className="flex items-center gap-2">
-                <Eye className="h-4 w-4" />
-                Preview
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
           <Button
             onClick={handleSave}
             disabled={isSaving}
@@ -232,233 +338,124 @@ export function QuestionnaireBuilder({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div className="space-y-6">
-          <TabsContent value="edit" className="mt-0 space-y-4">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Title</Label>
-                    <Input
-                      id="title"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder="Enter questionnaire title"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Enter questionnaire description"
-                      className="min-h-[100px]"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="frequency">Frequency</Label>
-                    <Select
-                      value={frequency}
-                      onValueChange={(value: FrequencyType) =>
-                        setFrequency(value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select frequency" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={FrequencyType.ONCE}>Once</SelectItem>
-                        <SelectItem value={FrequencyType.DAILY}>
-                          Daily
-                        </SelectItem>
-                        <SelectItem value={FrequencyType.WEEKLY}>
-                          Weekly
-                        </SelectItem>
-                        <SelectItem value={FrequencyType.MONTHLY}>
-                          Monthly
-                        </SelectItem>
-                        <SelectItem value={FrequencyType.QUARTERLY}>
-                          Quarterly
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid grid-cols-2 w-[250px] mb-6">
+          <TabsTrigger value="edit" className="flex items-center gap-2">
+            <PenSquare className="h-4 w-4" />
+            Edit
+          </TabsTrigger>
+          <TabsTrigger value="preview" className="flex items-center gap-2">
+            <Eye className="h-4 w-4" />
+            Preview
+          </TabsTrigger>
+        </TabsList>
 
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-              modifiers={[restrictToVerticalAxis]}
-            >
-              <SortableContext
-                items={questions.map((q) => `question-${q.order}`)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="space-y-4">
-                  <AnimatePresence>
-                    {questions.map((question, index) => (
-                      <SortableQuestion
-                        key={`question-${question.order}`}
-                        id={`question-${question.order}`}
-                        question={question}
-                        index={index}
-                        updateQuestion={updateQuestion}
-                        removeQuestion={removeQuestion}
+        <TabsContent value="edit" className="space-y-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="space-y-6">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Title</Label>
+                      <Input
+                        id="title"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Enter questionnaire title"
                       />
-                    ))}
-                  </AnimatePresence>
-                </div>
-              </SortableContext>
-            </DndContext>
-
-            <Button
-              onClick={addQuestion}
-              variant="outline"
-              className="w-full flex items-center justify-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Add Question
-            </Button>
-          </TabsContent>
-        </div>
-
-        <div>
-          <TabsContent value="preview" className="mt-0">
-            <Card className="h-full">
-              <CardContent className="pt-6">
-                <div className="mx-auto max-w-lg space-y-6">
-                  <div className="text-center">
-                    <h2 className="text-2xl font-bold">
-                      {title || "Untitled Questionnaire"}
-                    </h2>
-                    {description && (
-                      <p className="mt-2 text-muted-foreground">
-                        {description}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-6">
-                    {questions.map((question, index) => (
-                      <div key={index} className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium">
-                            {index + 1}. {question.text}
-                          </p>
-                          {question.required && (
-                            <Badge variant="outline" className="text-red-500">
-                              Required
-                            </Badge>
-                          )}
-                        </div>
-
-                        {/* Different input types based on question type */}
-                        {question.type === QuestionType.TEXT && (
-                          <Textarea
-                            placeholder="Your answer"
-                            className="min-h-[80px]"
-                            disabled
-                          />
-                        )}
-
-                        {question.type === QuestionType.MULTIPLE_CHOICE && (
-                          <div className="space-y-2">
-                            {question.options.map((option, optIndex) => (
-                              <div
-                                key={optIndex}
-                                className="flex items-center space-x-2"
-                              >
-                                <input type="radio" disabled />
-                                <Label>{option}</Label>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {question.type === QuestionType.CHECKBOX && (
-                          <div className="space-y-2">
-                            {question.options.map((option, optIndex) => (
-                              <div
-                                key={optIndex}
-                                className="flex items-center space-x-2"
-                              >
-                                <input type="checkbox" disabled />
-                                <Label>{option}</Label>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {question.type === QuestionType.RATING && (
-                          <div className="flex space-x-2">
-                            {[1, 2, 3, 4, 5].map((rating) => (
-                              <Button
-                                key={rating}
-                                variant="outline"
-                                size="sm"
-                                disabled
-                              >
-                                {rating}
-                              </Button>
-                            ))}
-                          </div>
-                        )}
-
-                        {question.type === QuestionType.DATE && (
-                          <Input type="date" disabled />
-                        )}
-
-                        {question.type === QuestionType.SLIDER && (
-                          <div className="space-y-2">
-                            <input
-                              type="range"
-                              min="0"
-                              max="100"
-                              className="w-full"
-                              disabled
-                            />
-                            <div className="flex justify-between text-xs">
-                              <span>0</span>
-                              <span>50</span>
-                              <span>100</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  {questions.length > 0 && (
-                    <Button className="w-full" disabled>
-                      Submit
-                    </Button>
-                  )}
-
-                  {questions.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-8 text-center">
-                      <p className="text-muted-foreground">
-                        No questions added yet
-                      </p>
-                      <Button
-                        variant="link"
-                        onClick={() => setActiveTab("edit")}
-                        className="mt-2"
-                      >
-                        Add some questions to see the preview
-                      </Button>
                     </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </div>
-      </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea
+                        id="description"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Enter questionnaire description"
+                        className="min-h-[100px]"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="frequency">Frequency</Label>
+                      <Select
+                        value={frequency}
+                        onValueChange={(value: FrequencyType) =>
+                          setFrequency(value)
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select frequency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={FrequencyType.ONCE}>
+                            Once
+                          </SelectItem>
+                          <SelectItem value={FrequencyType.DAILY}>
+                            Daily
+                          </SelectItem>
+                          <SelectItem value={FrequencyType.WEEKLY}>
+                            Weekly
+                          </SelectItem>
+                          <SelectItem value={FrequencyType.MONTHLY}>
+                            Monthly
+                          </SelectItem>
+                          <SelectItem value={FrequencyType.QUARTERLY}>
+                            Quarterly
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+                modifiers={[restrictToVerticalAxis]}
+              >
+                <SortableContext
+                  items={questions.map((q) => `question-${q.order}`)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-4">
+                    <AnimatePresence>
+                      {questions.map((question, index) => (
+                        <SortableQuestion
+                          key={`question-${question.order}`}
+                          id={`question-${question.order}`}
+                          question={question}
+                          index={index}
+                          updateQuestion={updateQuestion}
+                          removeQuestion={removeQuestion}
+                        />
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                </SortableContext>
+              </DndContext>
+
+              <Button
+                onClick={addQuestion}
+                variant="outline"
+                className="w-full flex items-center justify-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Question
+              </Button>
+            </div>
+
+            <div>
+              <PreviewCard />
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="preview">
+          <PreviewCard />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
