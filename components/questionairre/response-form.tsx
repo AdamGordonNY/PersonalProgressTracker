@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Confetti } from "@/components/ui/confetti";
-import { submitResponse, AnswerInput } from "@/app/actions/response";
+import { submitResponse, AnswerInput } from "@/actions/response";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { AlertCircle, CheckCircle, Save } from "lucide-react";
