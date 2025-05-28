@@ -36,6 +36,10 @@ model User {
   UserGoogleToken    UserGoogleToken[]
   boards             Board[]
   UserMicrosoftToken UserMicrosoftToken[]
+
+  Questionnaire Questionnaire[]
+
+  Response Response[]
 }
 
 model Column {
@@ -117,20 +121,6 @@ model Entry {
 
   @@index([feedId])
 }
-
-// model Card {
-//   id          String       @id @default(cuid())
-//   title       String
-//   description String?
-//   status      String
-//   userId      String
-//   createdAt   DateTime     @default(now())
-//   updatedAt   DateTime     @updatedAt
-//   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-//   keywords    Keyword[]
-//   attachments Attachment[]
-//   factSources FactSource[]
-// }
 
 model Keyword {
   id     String @id @default(cuid())
@@ -283,18 +273,77 @@ model Recording {
 }
 
 model Board {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  color       String?
-  order       Int
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  columns     Column[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String          @id @default(cuid())
+  title         String
+  description   String?
+  color         String?
+  order         Int
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  columns       Column[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  Questionnaire Questionnaire[]
 
   @@index([userId])
+}
+
+model Questionnaire {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  frequency   FrequencyType @default(ONCE)
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  questions   Question[]
+  responses   Response[]
+  boardId     String?
+  board       Board?        @relation(fields: [boardId], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([userId])
+}
+
+model Question {
+  id              String        @id @default(cuid())
+  text            String
+  type            QuestionType  @default(TEXT)
+  options         String[]
+  order           Int
+  required        Boolean       @default(false)
+  questionnaireId String
+  questionnaire   Questionnaire @relation(fields: [questionnaireId], references: [id])
+  createdAt       DateTime      @default(now())
+}
+
+model Response {
+  id              String        @id @default(cuid())
+  questionnaireId String
+  questionnaire   Questionnaire @relation(fields: [questionnaireId], references: [id])
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  answers         Json // Array of {questionId, value}
+  createdAt       DateTime      @default(now())
+
+  @@index([userId, questionnaireId])
+}
+
+enum FrequencyType {
+  ONCE
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+}
+
+enum QuestionType {
+  TEXT
+  MULTIPLE_CHOICE
+  CHECKBOX
+  RATING
+  DATE
+  SLIDER
 }
 
 enum Priority {
