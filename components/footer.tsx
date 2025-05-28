@@ -14,6 +14,30 @@ export function Footer() {
           </div>
           <nav className="hidden gap-4 sm:flex">
             <Link
+              href="/dashboard"
+              className="text-sm text-muted-foreground hover:underline"
+            >
+              Dashboard
+            </Link>
+            <Link
+              href="/settings"
+              className="text-sm text-muted-foreground hover:underline"
+            >
+              Settings
+            </Link>
+            <Link
+              href="/feeds"
+              className="text-sm text-muted-foreground hover:underline"
+            >
+              Feeds
+            </Link>
+            <Link
+              href="/cloud"
+              className="text-sm text-muted-foreground hover:underline"
+            >
+              Cloud
+            </Link>
+            <Link
               href="/privacy"
               className="text-sm text-muted-foreground hover:underline"
             >
