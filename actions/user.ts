@@ -171,12 +171,8 @@ export async function createOrUpdateUserToken({ userId }: { userId: string }) {
     const client = await clerkClient();
     const user = await db.user.findFirstOrThrow({
       where: { id: userId! },
-      include: {
-        UserMicrosoftToken: true,
-        UserGoogleToken: true,
-      },
     });
-    if (!user?.UserMicrosoftToken) {
+    if (user) {
       const [googleTokenRes, microsoftTokenRes] = await Promise.allSettled([
         client.users.getUserOauthAccessToken(userId!, "google"),
         client.users.getUserOauthAccessToken(userId!, "microsoft"),
@@ -214,10 +210,9 @@ export async function handleSessionCreated(eventData: any) {
 
     const user = await db.user.findUnique({
       where: { id: user_id },
-      include: { UserMicrosoftToken: true },
     });
 
-    if (!user?.UserMicrosoftToken) {
+    if (!user) {
       const msToken = await getMicrosoftToken(user_id);
 
       // Update metadata with token verification
