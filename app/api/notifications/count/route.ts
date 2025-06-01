@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { kv } from "@vercel/kv";
+import { getRedis } from "@/lib/redis";
 
 export const dynamic = "force-dynamic";
 
@@ -11,10 +11,11 @@ export async function GET() {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    const redisClient = await getRedis();
     const badgeKey = `user:${userId}:badge`;
-    const count = (await kv.get<number>(badgeKey)) || 0;
+    await redisClient.set(badgeKey, "0");
 
-    return NextResponse.json({ count });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error fetching notification count:", error);
     return new NextResponse("Internal Server Error", { status: 500 });

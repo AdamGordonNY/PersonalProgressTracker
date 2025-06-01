@@ -1,16 +1,13 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { kv } from "@vercel/kv";
 import { z } from "zod";
+import { rateLimiter } from "@/lib/redis";
 
 export const runtime = "nodejs";
 
 const feedSchema = z.object({
-  url: z
-    .string()
-    .url()
-    .regex(/^https:\/\/.*\.substack\.com\/feed\/?$/),
+  url: z.string().url(),
 });
 
 export async function POST(req: Request) {
@@ -22,10 +19,9 @@ export async function POST(req: Request) {
 
     // Rate limiting
     const rateKey = `rate:${userId}`;
-    const requests = await kv.incr(rateKey);
-    await kv.expire(rateKey, 60);
+    const allowed = await rateLimiter(rateKey, 5, 60);
 
-    if (requests > 5) {
+    if (!allowed) {
       return new NextResponse("Too many requests", { status: 429 });
     }
 
@@ -42,7 +38,6 @@ export async function POST(req: Request) {
         userId,
       },
     });
-
     return NextResponse.json(feed);
   } catch (error) {
     console.error("Error creating feed:", error);

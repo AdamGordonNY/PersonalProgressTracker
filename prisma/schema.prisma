@@ -9,33 +9,34 @@ datasource db {
 }
 
 model User {
-  id                 String               @id
-  name               String?
-  email              String?              @unique
-  emailVerified      DateTime?
-  image              String?
-  password           String?
-  cloudTokens        Json? // Encrypted tokens for cloud services
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
-  coins              Int                  @default(0)
-  habits             Habit[]
-  rewards            Reward[]
-  golfRounds         GolfRound[]
-  golfTips           GolfTip[]
-  practiceLog        PracticeLog[]
-  musicSkills        MusicSkill[]
-  musicGoals         MusicGoal[]
-  recordings         Recording[]
-  cards              Card[]
-  keywords           Keyword[]
-  attachments        Attachment[]
-  factSources        FactSource[]
-  feeds              Feed[]
-  columns            Column[]
-  UserGoogleToken    UserGoogleToken[]
-  boards             Board[]
-  UserMicrosoftToken UserMicrosoftToken[]
+  id               String              @id
+  name             String?
+  email            String?             @unique
+  emailVerified    DateTime?
+  image            String?
+  password         String?
+  cloudTokens      Json? // Encrypted tokens for cloud services
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  coins            Int                 @default(0)
+  habits           Habit[]
+  rewards          Reward[]
+  golfRounds       GolfRound[]
+  golfTips         GolfTip[]
+  practiceLog      PracticeLog[]
+  musicSkills      MusicSkill[]
+  musicGoals       MusicGoal[]
+  recordings       Recording[]
+  cards            Card[]
+  keywords         Keyword[]
+  attachments      Attachment[]
+  factSources      FactSource[]
+  feeds            Feed[]
+  columns          Column[]
+  UserGoogleToken  UserGoogleToken[]
+  boards           Board[]
+  microsoftToken   UserMicrosoftToken?
+  microsoftTokenId String?             @unique
 
   Questionnaire Questionnaire[]
 

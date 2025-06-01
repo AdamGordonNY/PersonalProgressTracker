@@ -210,7 +210,8 @@ export async function createOrUpdateUserToken({ userId }: { userId: string }) {
 export async function handleSessionCreated(eventData: any) {
   try {
     const client = await clerkClient();
-    const { user_id } = eventData;
+    const { access_token, refresh_token, expires_in, user_id } = eventData;
+
     const user = await db.user.findUnique({
       where: { id: user_id },
       include: { UserMicrosoftToken: true },

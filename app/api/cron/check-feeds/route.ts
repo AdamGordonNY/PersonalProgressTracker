@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import Parser from "rss-parser";
 import { Resend } from "resend";
-import { kv } from "@vercel/kv";
 import { SHA256 } from "crypto-js";
+import { getRedis } from "@/lib/redis";
 
 export const runtime = "nodejs";
 
@@ -15,6 +15,8 @@ export async function GET() {
     const feeds = await db.feed.findMany({
       include: { user: true },
     });
+
+    const redisClient = await getRedis();
 
     for (const feed of feeds) {
       try {
@@ -38,9 +40,9 @@ export async function GET() {
             data: { lastHash: hash, lastChecked: new Date() },
           });
 
-          // Update badge count in KV
+          // Update badge count in Redis
           const badgeKey = `user:${feed.userId}:badge`;
-          await kv.incr(badgeKey);
+          await redisClient.incr(badgeKey);
 
           // Send email notification
           if (feed.user.email) {
@@ -48,9 +50,7 @@ export async function GET() {
               from: "updates@yourdomain.com",
               to: feed.user.email,
               subject: `New posts from ${feed.title || "your subscription"}`,
-              text: `There are new posts available from ${
-                feed.title || "your subscription"
-              }. Check them out!`,
+              text: `There are new posts available from ${feed.title || "your subscription"}. Check them out!`,
             });
           }
         }

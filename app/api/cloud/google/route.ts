@@ -5,7 +5,7 @@ import {
   initializeGoogleDrive,
   listGoogleDriveFiles,
 } from "@/lib/cloud-storage";
-import { kv } from "@vercel/kv";
+import { rateLimiter } from "@/lib/redis";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
@@ -17,10 +17,9 @@ export async function GET(request: Request) {
 
     // Rate limiting
     const rateKey = `rate:cloud:${userId}`;
-    const requests = await kv.incr(rateKey);
-    await kv.expire(rateKey, 60);
+    const allowed = await rateLimiter(rateKey, 5, 60);
 
-    if (requests > 5) {
+    if (!allowed) {
       return new NextResponse("Too many requests", { status: 429 });
     }
 

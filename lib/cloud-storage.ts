@@ -1,6 +1,7 @@
 import "server-only";
 import { google } from "googleapis";
 import { Client } from "@microsoft/microsoft-graph-client";
+import { db } from "./db";
 
 export const initializeGoogleDrive = () => {
   const oauth2Client = new google.auth.OAuth2(
@@ -20,6 +21,23 @@ export const initializeOneDrive = () => {
   });
 };
 
+export async function hasMicrosoftToken(userId: string) {
+  const token = await db.userMicrosoftToken.findUnique({
+    where: { userId },
+    select: { id: true },
+  });
+  return !!token;
+}
+
+export async function getTokenStatus(userId: string) {
+  return await db.userMicrosoftToken.findUnique({
+    where: { userId },
+    select: {
+      id: true,
+      expiresAt: true,
+    },
+  });
+}
 export const listGoogleDriveFiles = async (drive: any) => {
   try {
     const response = await drive.files.list({

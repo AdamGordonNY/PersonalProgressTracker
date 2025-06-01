@@ -54,8 +54,7 @@ export function AddFeedDialog({
     } catch (error) {
       toast({
         title: "Error",
-        description:
-          "Failed to add feed. Make sure it's a valid Substack RSS URL.",
+        description: "Failed to add feed. Make sure it's a valid RSS URL.",
         variant: "destructive",
       });
     } finally {
@@ -67,21 +66,20 @@ export function AddFeedDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add Substack Feed</DialogTitle>
+          <DialogTitle>Add RSS Feed</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="url">Feed URL</Label>
             <Input
               id="url"
-              placeholder="https://example.substack.com/feed"
+              placeholder="https://example.com/feed.xml"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              pattern="^https:\/\/.*\.substack\.com\/feed\/?$"
               required
             />
             <p className="mt-1 text-xs text-muted-foreground">
-              Enter the RSS feed URL from your favorite Substack newsletter
+              Enter the RSS feed URL from any website or newsletter
             </p>
           </div>
           <div className="flex justify-end gap-2">

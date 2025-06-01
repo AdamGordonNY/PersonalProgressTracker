@@ -5,7 +5,7 @@ import { Plus, Rss } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FeedList } from "@/components/feed-manager/feed-list";
 import { AddFeedDialog } from "@/components/feed-manager/add-feed-dialog";
-import { NotificationCenter } from "../notifications/notification-center";
+import { NotificationCenter } from "@/components/notifications/notification-center";
 
 export function FeedManager() {
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -14,9 +14,9 @@ export function FeedManager() {
     <div className="container mx-auto p-4">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Substack Monitor</h1>
+          <h1 className="text-2xl font-bold">RSS Feed Monitor</h1>
           <p className="text-muted-foreground">
-            Track your favorite Substack newsletters
+            Track your favorite websites and newsletters
           </p>
         </div>
         <div className="flex items-center gap-2">
