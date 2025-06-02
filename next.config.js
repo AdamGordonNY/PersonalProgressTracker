@@ -39,32 +39,15 @@ const nextConfig = {
         pathname: "/**", // Match all paths under utfs.io
       },
     ],
-  },async headers() {
+  },
+  async headers() {
     return [
       {
-        source: `/api/feeds/${id}`,
+        source: `/api/feeds/parse`,
         headers: [
           { key: 'Access-Control-Allow-Origin', value: 'https://adam-gordon.info' }
         ]
       },
-      {
-        source: '/api/feeds/parse',
-        headers: [
-          { key: 'Access-Control-Allow-Origin', value: 'https://adam-gordon.info' }
-        ]
-      },
-      {
-        source: '/api/feeds',
-        headers: [
-          { key: 'Access-Control-Allow-Origin', value: 'https://adam-gordon.info' }
-        ]
-      },
-      {
-        source: `/api/feeds/${id}/refresh`,
-        headers: [
-          { key: 'Access-Control-Allow-Origin', value: 'https://adam-gordon.info' }
-        ]
-      }
     ]
   }
 };
