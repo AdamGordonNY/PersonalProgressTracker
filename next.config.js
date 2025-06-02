@@ -38,7 +38,16 @@ const nextConfig = {
         hostname: "utfs.io",
         pathname: "/**", // Match all paths under utfs.io
       },
-    ],
+    ],async headers() {
+      return [
+        {
+          source: '/api/parse-feed',
+          headers: [
+            { key: 'Access-Control-Allow-Origin', value: 'https://adam-gordon.info' }
+          ]
+        }
+      ]
+    }
   },
 };
 
