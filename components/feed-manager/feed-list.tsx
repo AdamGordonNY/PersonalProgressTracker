@@ -118,7 +118,7 @@ export function FeedList() {
 
       {feeds.length === 0 && (
         <div className="flex h-40 items-center justify-center text-center text-muted-foreground">
-          No feeds added yet. Add your first Substack feed to get started.
+          No feeds added yet. Add your first RSS feed to get started.
         </div>
       )}
     </div>

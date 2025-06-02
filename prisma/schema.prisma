@@ -119,6 +119,7 @@ model Entry {
   feed      Feed     @relation(fields: [feedId], references: [id], onDelete: Cascade)
   published DateTime
   createdAt DateTime @default(now())
+  guid      String?  @unique // Add this for duplicate prevention
 
   @@index([feedId])
 }

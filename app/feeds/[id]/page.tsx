@@ -2,10 +2,8 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import Parser from "rss-parser";
 import { FeedDetail } from "@/components/feed-manager/feed-detail";
 
-// Metadata generation
 export async function generateMetadata({
   params,
 }: {
@@ -26,7 +24,6 @@ export async function generateMetadata({
       description: `Content from ${feed.url}`,
     };
   } catch (error) {
-    console.error("Error generating metadata:", error);
     return { title: "RSS Feed" };
   }
 }
@@ -36,7 +33,6 @@ export default async function FeedPage({ params }: { params: { id: string } }) {
   if (!userId) notFound();
 
   try {
-    // Fetch feed from database
     const feed = await db.feed.findUnique({
       where: { id: params.id, userId },
       include: {
@@ -49,35 +45,20 @@ export default async function FeedPage({ params }: { params: { id: string } }) {
 
     if (!feed) notFound();
 
-    // Fetch fresh RSS content
-    const parser = new Parser({
-      customFields: {
-        item: ["content:encoded", "description"],
-      },
-    });
+    // Convert dates to ISO strings for serialization
+    const serializableFeed = {
+      ...feed,
+      createdAt: feed.createdAt.toISOString(),
+      updatedAt: feed.updatedAt.toISOString(),
+      lastChecked: feed.lastChecked.toISOString(),
+      entries: feed.entries.map((entry) => ({
+        ...entry,
+        createdAt: entry.createdAt.toISOString(),
+        published: entry.published.toISOString(),
+      })),
+    };
 
-    // Try to fetch the latest feed content
-    let parsedFeed;
-    let fetchError = null;
-    try {
-      parsedFeed = await parser.parseURL(feed.url);
-
-      // If this is a new feed without a title yet, update it
-      if (!feed.title && parsedFeed.title) {
-        await db.feed.update({
-          where: { id: feed.id },
-          data: { title: parsedFeed.title },
-        });
-      }
-    } catch (error) {
-      console.error("Error parsing feed:", error);
-      fetchError = "Could not fetch latest feed content";
-      // We'll continue with the stored entries
-    }
-
-    return (
-      <FeedDetail feed={feed} parsedFeed={parsedFeed} fetchError={fetchError} />
-    );
+    return <FeedDetail feed={serializableFeed} />;
   } catch (error) {
     console.error("Error fetching feed:", error);
     return (

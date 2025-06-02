@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { parseISO, format } from "date-fns";
@@ -14,30 +13,53 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import DOMPurify from "isomorphic-dompurify";
+import { useState } from "react";
 
-interface FeedDetailProps {
-  feed: any;
-  parsedFeed: any;
-  fetchError: string | null;
+interface Feed {
+  id: string;
+  title: string | null;
+  url: string;
+  entries: {
+    id: string;
+    title: string;
+    content: string;
+    url: string;
+    published: string; // ISO string
+  }[];
+  createdAt: string;
+  updatedAt: string;
+  lastChecked: string;
 }
 
-export function FeedDetail({ feed, parsedFeed, fetchError }: FeedDetailProps) {
+interface FeedDetailProps {
+  feed: Feed;
+}
+
+export function FeedDetail({ feed }: FeedDetailProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
-
-  // Combine database entries with freshly parsed feed items
-  const items = parsedFeed?.items || feed.entries;
 
   const handleRefresh = async () => {
     if (isRefreshing) return;
 
     setIsRefreshing(true);
     try {
-      await fetch(`/api/feeds/${feed.id}/refresh`, { method: "POST" });
-      window.location.reload();
+      const response = await fetch(`/api/feeds/${feed.id}/refresh`, {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Feed refreshed",
+          description: "Reloading to show new content...",
+        });
+        // Reload after a short delay to show the toast
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        throw new Error("Failed to refresh feed");
+      }
     } catch (error) {
       console.error("Error refreshing feed:", error);
       toast({
@@ -57,7 +79,6 @@ export function FeedDetail({ feed, parsedFeed, fetchError }: FeedDetailProps) {
     }
   };
 
-  // Function to safely sanitize HTML content
   const sanitizeContent = (content: string) => {
     return DOMPurify.sanitize(content, {
       ALLOWED_TAGS: [
@@ -79,11 +100,6 @@ export function FeedDetail({ feed, parsedFeed, fetchError }: FeedDetailProps) {
     });
   };
 
-  // Get content from item, handling different RSS formats
-  const getItemContent = (item: any) => {
-    return item["content:encoded"] || item.content || item.description || "";
-  };
-
   return (
     <div className="container mx-auto p-4">
       <div className="mb-6 flex items-center justify-between">
@@ -95,7 +111,11 @@ export function FeedDetail({ feed, parsedFeed, fetchError }: FeedDetailProps) {
           </Link>
           <div>
             <h1 className="text-2xl font-bold">{feed.title || "RSS Feed"}</h1>
-            <p className="text-muted-foreground">{feed.url}</p>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>{feed.url}</span>
+              <span>•</span>
+              <span>Last checked: {formatDate(feed.lastChecked)}</span>
+            </div>
           </div>
         </div>
         <Button
@@ -117,20 +137,11 @@ export function FeedDetail({ feed, parsedFeed, fetchError }: FeedDetailProps) {
         </Button>
       </div>
 
-      {fetchError && (
-        <Card className="mb-6 border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
-          <CardContent className="p-4">
-            <p>{fetchError}</p>
-            <p className="mt-2 text-sm">Showing previously stored entries.</p>
-          </CardContent>
-        </Card>
-      )}
-
       <div className="space-y-6">
-        {items.length > 0 ? (
-          items.map((item: any, index: number) => (
+        {feed.entries.length > 0 ? (
+          feed.entries.map((entry, index) => (
             <motion.div
-              key={item.id || item.guid || item.link || index}
+              key={entry.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
@@ -139,21 +150,15 @@ export function FeedDetail({ feed, parsedFeed, fetchError }: FeedDetailProps) {
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
-                      <CardTitle className="text-xl">{item.title}</CardTitle>
+                      <CardTitle className="text-xl">{entry.title}</CardTitle>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="h-4 w-4" />
-                        <span>
-                          {formatDate(
-                            item.pubDate ||
-                              item.published ||
-                              new Date().toISOString()
-                          )}
-                        </span>
+                        <span>{formatDate(entry.published)}</span>
                       </div>
                     </div>
                     <Button variant="ghost" size="icon" asChild>
                       <a
-                        href={item.link}
+                        href={entry.url}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -166,7 +171,7 @@ export function FeedDetail({ feed, parsedFeed, fetchError }: FeedDetailProps) {
                   <div
                     className="prose max-w-none dark:prose-invert"
                     dangerouslySetInnerHTML={{
-                      __html: sanitizeContent(getItemContent(item)),
+                      __html: sanitizeContent(entry.content),
                     }}
                   />
                 </CardContent>
@@ -178,8 +183,20 @@ export function FeedDetail({ feed, parsedFeed, fetchError }: FeedDetailProps) {
             <Rss className="mb-4 h-12 w-12 text-muted-foreground" />
             <h2 className="text-lg font-medium">No entries found</h2>
             <p className="mt-2 text-muted-foreground">
-              This feed doesn&apos;t have any entries yet or may be invalid.
+              This feed doesn&apos;t have any entries yet. Try refreshing.
             </p>
+            <Button
+              onClick={handleRefresh}
+              className="mt-4"
+              disabled={isRefreshing}
+            >
+              {isRefreshing ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-2 h-4 w-4" />
+              )}
+              Refresh Feed
+            </Button>
           </div>
         )}
       </div>
