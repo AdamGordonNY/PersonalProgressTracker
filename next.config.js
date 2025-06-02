@@ -38,17 +38,35 @@ const nextConfig = {
         hostname: "utfs.io",
         pathname: "/**", // Match all paths under utfs.io
       },
-    ],async headers() {
-      return [
-        {
-          source: '/api/parse-feed',
-          headers: [
-            { key: 'Access-Control-Allow-Origin', value: 'https://adam-gordon.info' }
-          ]
-        }
-      ]
-    }
-  },
+    ],
+  },async headers() {
+    return [
+      {
+        source: `/api/feeds/${id}`,
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: 'https://adam-gordon.info' }
+        ]
+      },
+      {
+        source: '/api/feeds/parse',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: 'https://adam-gordon.info' }
+        ]
+      },
+      {
+        source: '/api/feeds',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: 'https://adam-gordon.info' }
+        ]
+      },
+      {
+        source: `/api/feeds/${id}/refresh`,
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: 'https://adam-gordon.info' }
+        ]
+      }
+    ]
+  }
 };
 
 module.exports = nextConfig;
