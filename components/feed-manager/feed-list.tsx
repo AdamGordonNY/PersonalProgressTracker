@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Feed } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
 
 export function FeedList() {
   const [feeds, setFeeds] = useState<Feed[]>([]);
@@ -87,9 +88,13 @@ export function FeedList() {
               </div>
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="icon" asChild>
-                  <a href={feed.url} target="_blank" rel="noopener noreferrer">
+                  <Link
+                    href={`/feeds/${feed.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <ExternalLink className="h-4 w-4" />
-                  </a>
+                  </Link>
                 </Button>
                 <Button
                   variant="ghost"
