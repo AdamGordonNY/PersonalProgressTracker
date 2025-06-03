@@ -22,7 +22,6 @@ model User {
   habits           Habit[]
   rewards          Reward[]
   golfRounds       GolfRound[]
-  golfTips         GolfTip[]
   practiceLog      PracticeLog[]
   musicSkills      MusicSkill[]
   musicGoals       MusicGoal[]
@@ -195,41 +194,119 @@ model Reward {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+// Golf tracking models
 model GolfRound {
-  id          String     @id @default(cuid())
+  id          String      @id @default(cuid())
   userId      String
   courseName  String
   date        DateTime
   totalScore  Int
   totalPutts  Int
   fairwaysHit Int
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  greensInReg Int
+  weather     Json? // Store weather data as JSON
+  courseId    String?
+  course      GolfCourse? @relation(fields: [courseId], references: [id])
+  user        User        @relation(fields: [userId], references: [id])
   holes       GolfHole[]
+  shots       GolfShot[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([courseId])
 }
 
 model GolfHole {
-  id         String    @id @default(cuid())
+  id         String     @id @default(cuid())
   roundId    String
   holeNumber Int
   par        Int
   strokes    Int
   putts      Int
   fairwayHit Boolean
-  round      GolfRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  round      GolfRound  @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  shots      GolfShot[]
 
   @@unique([roundId, holeNumber])
+  @@index([roundId])
 }
 
-model GolfTip {
-  id      String   @id @default(cuid())
-  userId  String
-  title   String
-  content String
-  date    DateTime @default(now())
-  tags    String[]
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model GolfShot {
+  id            String    @id @default(cuid())
+  roundId       String
+  holeId        String
+  club          ClubType
+  shotType      ShotType
+  distance      Int // Yards
+  result        String? // "Fairway", "Rough", "Green", etc.
+  elevation     Int? // Feet above/below target
+  windSpeed     Int? // MPH
+  windDirection String? // N, NE, E, etc.
+  latitude      Float? // For shot mapping
+  longitude     Float? // For shot mapping
+  note          String?
+  round         GolfRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  hole          GolfHole  @relation(fields: [holeId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+
+  @@index([roundId])
+  @@index([holeId])
+}
+
+model GolfCourse {
+  id        String             @id @default(cuid())
+  name      String
+  location  String
+  latitude  Float
+  longitude Float
+  holes     GolfHoleTemplate[]
+  rounds    GolfRound[]
+  createdAt DateTime           @default(now())
+}
+
+model GolfHoleTemplate {
+  id         String     @id @default(cuid())
+  courseId   String
+  holeNumber Int
+  par        Int
+  yards      Int
+  handicap   Int
+  course     GolfCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, holeNumber])
+  @@index([courseId])
+}
+
+enum ClubType {
+  DRIVER
+  THREE_WOOD
+  FOUR_HYBRID
+  FIVE_HYBRID
+  TWO_IRON
+  THREE_IRON
+  FOUR_IRON
+  FIVE_IRON
+  SIX_IRON
+  SEVEN_IRON
+  EIGHT_IRON
+  NINE_IRON
+  PITCHING_WEDGE
+  GAP_WEDGE
+  SAND_WEDGE
+  LOB_WEDGE
+  PUTTER
+}
+
+enum ShotType {
+  DRIVE
+  FAIRWAY
+  APPROACH
+  CHIP
+  PITCH
+  BUNKER
+  PUTT
+  RECOVERY
 }
 
 model PracticeLog {
