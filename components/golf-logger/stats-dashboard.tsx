@@ -19,6 +19,8 @@ import {
 } from "recharts";
 import { Loader2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
 
 interface StatsDashboardProps {
   stats: any;
@@ -29,15 +31,80 @@ interface StatsDashboardProps {
 // Custom colors for charts
 const COLORS = ["#10b981", "#3b82f6", "#f97316", "#8b5cf6", "#ec4899"];
 
-export function StatsDashboard({
-  stats,
-  rounds,
-  isLoading,
-}: StatsDashboardProps) {
+export function StatsDashboard() {
+  const [stats, setStats] = useState<any>(null);
+  const [rounds, setRounds] = useState<any[]>([]);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [isLoadingRounds, setIsLoadingRounds] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch stats and rounds in parallel
+        const [statsResponse, roundsResponse] = await Promise.all([
+          fetch("/api/golf/stats"),
+          fetch("/api/golf/rounds"),
+        ]);
+
+        // Handle stats response
+        if (!statsResponse.ok) {
+          throw new Error("Failed to fetch statistics");
+        }
+
+        // Handle rounds response
+        if (!roundsResponse.ok) {
+          throw new Error("Failed to fetch rounds");
+        }
+
+        // Parse responses
+        const statsData = await statsResponse.json();
+        const roundsData = await roundsResponse.json();
+
+        // Update state
+        setStats(statsData);
+        setRounds(roundsData);
+      } catch (error) {
+        console.error("Error fetching golf data:", error);
+        setError("Failed to load statistics. Please try again.");
+        toast({
+          title: "Error",
+          description: "Failed to load golf statistics",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingStats(false);
+        setIsLoadingRounds(false);
+      }
+    };
+
+    fetchData();
+  }, [toast]);
+
+  const isLoading = isLoadingStats || isLoadingRounds;
+
   if (isLoading) {
     return (
-      <Card className="flex min-h-[400px] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <Card className="min-h-[400px]">
+        <CardContent className="flex items-center justify-center p-6">
+          <div className="flex flex-col items-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <p className="mt-2 text-sm text-muted-foreground">
+              Loading statistics...
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="min-h-[400px]">
+        <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+          <p className="text-destructive">{error}</p>
+        </CardContent>
       </Card>
     );
   }
@@ -69,7 +136,8 @@ export function StatsDashboard({
         name: type
           .split("_")
           .map(
-            (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+            (word: string) =>
+              word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
           )
           .join(" "),
         value: count,
@@ -82,7 +150,7 @@ export function StatsDashboard({
         .map(([club, count]) => ({
           name: club
             .split("_")
-            .map((word) => {
+            .map((word: string) => {
               if (
                 [
                   "TWO",
@@ -108,6 +176,26 @@ export function StatsDashboard({
         }))
         .sort((a, b) => (b.count as number) - (a.count as number))
     : [];
+  if (isLoading) {
+    return (
+      <Card className="flex min-h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </Card>
+    );
+  }
+
+  if (!stats || rounds.length === 0) {
+    return (
+      <Card className="min-h-[400px]">
+        <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+          <h3 className="mb-2 text-xl font-semibold">No Stats Available</h3>
+          <p className="text-muted-foreground">
+            Complete at least one round to see your statistics
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Tabs defaultValue="overview" className="space-y-4">

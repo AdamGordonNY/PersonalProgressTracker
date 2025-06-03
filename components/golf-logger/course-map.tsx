@@ -10,15 +10,11 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Search, Plus } from "lucide-react";
-import { AddCourseDialog } from "./add-course-dialog";
+import { Search, Plus, Loader2 } from "lucide-react";
+import { AddCourseDialog } from "@/components/golf-logger/add-course-dialog";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
-interface CourseMapProps {
-  courses: any[];
-}
+import { useToast } from "@/hooks/use-toast";
 
 const containerStyle = {
   width: "100%",
@@ -36,13 +32,17 @@ const mapOptions = {
   streetViewControl: false,
 };
 
-export function CourseMap({ courses = [] }: CourseMapProps) {
+export function CourseMap() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
   const [mapCenter, setMapCenter] = useState(defaultCenter);
   const [showAddCourseDialog, setShowAddCourseDialog] = useState(false);
+  const [courses, setCourses] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const router = useRouter();
+  const { toast } = useToast();
 
   const onLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
@@ -51,6 +51,54 @@ export function CourseMap({ courses = [] }: CourseMapProps) {
   const onUnmount = useCallback(() => {
     mapRef.current = null;
   }, []);
+
+  // Fetch courses data
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const response = await fetch("/api/golf/courses");
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch courses");
+        }
+
+        const data = await response.json();
+        setCourses(data);
+
+        // Update map center if courses are available
+        if (data.length > 0) {
+          const sumLat = data.reduce(
+            (sum: number, course: any) => sum + course.latitude,
+            0
+          );
+          const sumLng = data.reduce(
+            (sum: number, course: any) => sum + course.longitude,
+            0
+          );
+
+          setMapCenter({
+            lat: sumLat / data.length,
+            lng: sumLng / data.length,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+        setError("Failed to load courses. Please try again.");
+        toast({
+          title: "Error",
+          description: "Failed to load courses",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, [toast]);
 
   // Filter courses based on search query
   const filteredCourses = searchQuery
@@ -61,22 +109,75 @@ export function CourseMap({ courses = [] }: CourseMapProps) {
       )
     : courses;
 
-  // Update map center when courses change
-  useEffect(() => {
-    if (courses.length > 0) {
-      const sumLat = courses.reduce((sum, course) => sum + course.latitude, 0);
-      const sumLng = courses.reduce((sum, course) => sum + course.longitude, 0);
-
-      setMapCenter({
-        lat: sumLat / courses.length,
-        lng: sumLng / courses.length,
-      });
-    }
-  }, [courses]);
-
   const handleCourseCreated = () => {
     router.refresh();
+
+    // Refetch courses
+    fetch("/api/golf/courses")
+      .then((res) => res.json())
+      .then((data) => {
+        setCourses(data);
+        toast({
+          title: "Success",
+          description: "Course added successfully",
+        });
+      })
+      .catch((err) => {
+        console.error("Error refetching courses:", err);
+      });
   };
+
+  // Render loading skeleton
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="h-10 w-64 animate-pulse rounded-md bg-muted"></div>
+          <div className="h-10 w-32 animate-pulse rounded-md bg-muted"></div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-12">
+          <div className="md:col-span-4">
+            <Card>
+              <CardHeader>
+                <div className="h-6 w-40 animate-pulse rounded-md bg-muted"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="h-16 animate-pulse rounded-md bg-muted"
+                    ></div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="md:col-span-8">
+            <Card>
+              <CardContent className="p-4">
+                <div className="h-[500px] animate-pulse rounded-md bg-muted"></div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Render error state
+  if (error) {
+    return (
+      <Card className="p-6">
+        <div className="flex flex-col items-center justify-center text-center">
+          <p className="mb-4 text-destructive">{error}</p>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-4">
