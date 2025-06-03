@@ -232,11 +232,11 @@ export default function GolfDashboard() {
         </TabsContent>
 
         <TabsContent value="stats">
-          <StatsDashboard stats={stats} rounds={rounds} isLoading={isLoading} />
+          <StatsDashboard />
         </TabsContent>
 
         <TabsContent value="map">
-          <CourseMap courses={courses} />
+          <CourseMap />
         </TabsContent>
       </Tabs>
 
