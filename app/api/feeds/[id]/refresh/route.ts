@@ -9,25 +9,25 @@ export async function POST(
   req: Request,
   { params }: { params: { id: string } }
 ) {
+  let userId: string | null = null;
   try {
-    const { userId } = await auth();
+    const authResult = await auth();
+    userId = authResult.userId;
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
     // Rate limiting
     const rateKey = `refresh:feed:${userId}`;
-    const allowed = await rateLimiter(rateKey, 3, 60); // 3 refreshes per minute
-
+    const allowed = await rateLimiter(rateKey, 3, 60);
     if (!allowed) {
       return new NextResponse("Too many requests", { status: 429 });
     }
 
-    // Check if feed exists and belongs to user
+    // Check if feed exists
     const feed = await db.feed.findUnique({
       where: { id: params.id, userId },
     });
-
     if (!feed) {
       return new NextResponse("Feed not found", { status: 404 });
     }
@@ -35,7 +35,7 @@ export async function POST(
     // Fetch and parse the feed
     const parser = new Parser({
       customFields: {
-        item: ["content:encoded", "description"],
+        item: ["content:encoded", "description", "guid"],
       },
     });
 
@@ -46,44 +46,65 @@ export async function POST(
 
     // Only update if content has changed
     if (hash !== feed.lastHash) {
-      // Extract entries
-      const newEntries = parsedFeed.items.map((item) => ({
-        title: item.title || "Untitled",
-        content:
-          item.content || item["content:encoded"] || item.description || "",
-        url: item.link || "",
-        published: new Date(item.pubDate || item.isoDate || Date.now()),
-        feedId: feed.id,
-      }));
+      // Prepare entries with proper GUID handling
+      const entriesToCreate = parsedFeed.items.map((item) => {
+        // Generate unique GUID if not provided
+        const guid = item.guid || SHA256(item.link! || item.title!).toString();
 
-      // Update feed with new entries and metadata
-      await db.feed.update({
-        where: { id: feed.id },
-        data: {
-          title: feed.title || parsedFeed.title || "RSS Feed",
-          lastHash: hash,
-          lastChecked: new Date(),
-          entries: {
-            createMany: {
-              data: newEntries,
-              skipDuplicates: true,
-            },
-          },
-        },
+        return {
+          title: item.title || "Untitled",
+          content:
+            item.content || item["content:encoded"] || item.description || "",
+          url: item.link || "",
+          published: new Date(item.pubDate || item.isoDate || Date.now()),
+          guid, // Essential for duplicate prevention
+        };
       });
+
+      // Transaction to update feed and create entries
+      await db.$transaction([
+        // Update feed metadata
+        db.feed.update({
+          where: { id: feed.id },
+          data: {
+            title: feed.title || parsedFeed.title || "RSS Feed",
+            lastHash: hash,
+            lastChecked: new Date(),
+          },
+        }),
+
+        // Create new entries using upsert
+        ...entriesToCreate.map((entry) =>
+          db.entry.upsert({
+            where: { guid: entry.guid },
+            update: {
+              title: entry.title,
+              content: entry.content,
+              url: entry.url,
+              published: entry.published,
+            },
+            create: {
+              ...entry,
+              feedId: feed.id,
+            },
+          })
+        ),
+      ]);
     } else {
-      // Just update the last checked time
+      // Update last checked time only
       await db.feed.update({
         where: { id: feed.id },
-        data: {
-          lastChecked: new Date(),
-        },
+        data: { lastChecked: new Date() },
       });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error refreshing feed:", error);
+    console.error("Error refreshing feed:", {
+      message: error instanceof Error ? error.message : String(error),
+      feedId: params.id,
+      userId: userId,
+    });
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
