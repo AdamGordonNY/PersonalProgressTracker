@@ -40,6 +40,8 @@ model User {
   Questionnaire Questionnaire[]
 
   Response Response[]
+
+  Note Note[]
 }
 
 model Column {
@@ -71,6 +73,7 @@ model Card {
   order       Int
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  Note        Note[]
 
   @@index([columnId])
   @@index([userId])
@@ -133,18 +136,30 @@ model Keyword {
 }
 
 model Attachment {
-  id        String   @id @default(cuid())
+  id        String         @id @default(cuid())
   name      String
-  url       String
+  url       String?
+  content   String?        @db.Text // NEW: Store rich text content
   fileType  String
-  provider  String
+  type      AttachmentType @default(FILE) // NEW enum
+  provider  String?
   cardId    String
-  userId    String
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  userId    String // NEW: Track who created the attachment
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt // NEW: Track updates
+  card      Card           @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id])
 
   @@index([cardId])
+  @@index([userId])
+}
+
+enum AttachmentType {
+  FILE
+  NOTE
+  LINK
+  IMAGE
+  FACT_SOURCE
 }
 
 model FactSource {
@@ -159,6 +174,21 @@ model FactSource {
   card       Card    @relation(fields: [cardId], references: [id], onDelete: Cascade)
 
   @@index([cardId])
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @db.Text
+  cardId    String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([cardId])
+  @@index([userId])
 }
 
 model Habit {
