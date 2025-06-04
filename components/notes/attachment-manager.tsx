@@ -26,13 +26,16 @@ import {
   StickyNote,
   Plus,
   Search,
+  FileEdit,
+  Trash2,
 } from "lucide-react";
 import { NoteAttachmentCard } from "@/components/notes/note-attachment-card";
 import { AddNoteDialog } from "@/components/notes/add-note-dialog";
 import { FactSourceCard } from "@/components/notes/fact-source-card";
 import { NoteTemplateDialog } from "@/components/notes/note-template-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useCard } from "@/lib/hooks/use-card";
+import { useCard } from "@/hooks/use-card";
+import { format } from "date-fns";
 
 interface AttachmentManagerProps {
   cardId: string;
