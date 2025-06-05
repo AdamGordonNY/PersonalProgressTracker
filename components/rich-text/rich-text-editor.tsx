@@ -11,6 +11,7 @@ import Color from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
 import Placeholder from "@tiptap/extension-placeholder";
 import TaskList from "@tiptap/extension-task-list";
+import TaskItem from "@tiptap/extension-task-item";
 import {
   Bold,
   Italic,
@@ -104,6 +105,12 @@ export function RichTextEditor({
         placeholder,
       }),
       TaskList,
+      TaskItem.configure({
+        nested: true,
+        HTMLAttributes: {
+          class: "task-list",
+        },
+      }),
     ],
     content: initialContent,
     autofocus: "end",
