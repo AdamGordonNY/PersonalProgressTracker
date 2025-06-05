@@ -36,29 +36,24 @@ import { NoteTemplateDialog } from "@/components/notes/note-template-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useCard } from "@/hooks/use-card";
 import { format } from "date-fns";
+import SortableAttachmentItem from "./sortable-attachment-item";
 
 interface AttachmentManagerProps {
   cardId: string;
   attachments: (Attachment & { user: { name: string | null } })[];
-  factSources: FactSource[];
   onCreateAttachment: (data: any) => Promise<void>;
   onUpdateAttachment: (id: string, data: any) => Promise<void>;
   onDeleteAttachment: (id: string) => Promise<void>;
-  onCreateFactSource: (data: any) => Promise<void>;
-  onUpdateFactSource: (id: string, data: any) => Promise<void>;
-  onDeleteFactSource: (id: string) => Promise<void>;
+  keywords: string[]; // Changed to simple string array
 }
 
 export function AttachmentManager({
   cardId,
   attachments,
-  factSources,
   onCreateAttachment,
   onUpdateAttachment,
   onDeleteAttachment,
-  onCreateFactSource,
-  onUpdateFactSource,
-  onDeleteFactSource,
+  keywords, // Now expects string[]
 }: AttachmentManagerProps) {
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -66,7 +61,6 @@ export function AttachmentManager({
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [sortedAttachments, setSortedAttachments] = useState<Attachment[]>([]);
   const { toast } = useToast();
-  const { keywords = [] } = useCard(cardId) || {};
 
   // Setup DnD sensors
   const sensors = useSensors(
@@ -134,14 +128,13 @@ export function AttachmentManager({
     );
   };
 
-  // Handle adding a new note
   const handleAddNote = async (data: { title: string; content: string }) => {
     try {
       await onCreateAttachment({
         name: data.title,
         content: data.content,
         type: AttachmentType.NOTE,
-        fileType: "note/html",
+        fileType: "text/html",
         cardId,
       });
 
@@ -160,9 +153,16 @@ export function AttachmentManager({
   };
 
   // Update a note attachment
-  const handleUpdateNote = async (id: string, content: string) => {
+  const handleUpdateNote = async (
+    id: string,
+    title: string,
+    content: string
+  ) => {
     try {
-      await onUpdateAttachment(id, { content });
+      await onUpdateAttachment(id, {
+        name: title,
+        content,
+      });
 
       toast({
         title: "Note updated",
@@ -202,11 +202,12 @@ export function AttachmentManager({
   };
 
   // Use a note template
-  const handleUseTemplate = (template: { title: string; content: string }) => {
+  const handleUseTemplate = (template: any) => {
     setShowTemplateDialog(false);
-
-    // Pre-fill the add note dialog
-    handleAddNote(template);
+    handleAddNote({
+      title: template.title,
+      content: template.content,
+    });
   };
 
   return (
@@ -269,6 +270,21 @@ export function AttachmentManager({
         </TabsList>
 
         <TabsContent value="all" className="mt-4">
+          {" "}
+          {filteredAttachments.map((attachment) => (
+            <SortableAttachmentItem
+              key={attachment.id}
+              attachment={attachment}
+              onDelete={() => handleDeleteAttachment(attachment.id)}
+              onUpdate={(content: string) =>
+                onUpdateAttachment(attachment.id, { content })
+              }
+              onEdit={() => {
+                /* implement edit logic or leave as noop */
+              }}
+              keywords={keywords}
+            />
+          ))}
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -285,11 +301,13 @@ export function AttachmentManager({
                       <SortableAttachmentItem
                         key={attachment.id}
                         attachment={attachment}
-                        onUpdate={(content) =>
-                          handleUpdateNote(attachment.id, content)
-                        }
-                        onEdit={() => {}}
                         onDelete={() => handleDeleteAttachment(attachment.id)}
+                        onUpdate={(content: string) =>
+                          onUpdateAttachment(attachment.id, { content })
+                        }
+                        onEdit={() => {
+                          /* implement edit logic or leave as noop */
+                        }}
                         keywords={keywords}
                       />
                     ))
@@ -332,10 +350,9 @@ export function AttachmentManager({
                     content={attachment.content || ""}
                     updatedAt={attachment.updatedAt}
                     keywords={keywords}
-                    onEdit={() => {}}
                     onDelete={() => handleDeleteAttachment(attachment.id)}
-                    onUpdate={(content) =>
-                      handleUpdateNote(attachment.id, content)
+                    onUpdate={(title, content) =>
+                      handleUpdateNote(attachment.id, title, content)
                     }
                   />
                 ))
@@ -378,7 +395,7 @@ export function AttachmentManager({
         open={showAddNoteDialog}
         onOpenChange={setShowAddNoteDialog}
         onSave={handleAddNote}
-        keywords={keywords}
+        keywords={keywords.map((kw) => ({ id: kw.toLowerCase(), name: kw }))} // Convert to array of objects
       />
 
       <NoteTemplateDialog
@@ -386,129 +403,6 @@ export function AttachmentManager({
         onOpenChange={setShowTemplateDialog}
         onUseTemplate={handleUseTemplate}
       />
-    </div>
-  );
-}
-
-// Sortable wrapper for attachment items
-function SortableAttachmentItem({
-  attachment,
-  onUpdate,
-  onEdit,
-  onDelete,
-  keywords,
-}: {
-  attachment: any;
-  onUpdate: (content: string) => Promise<void>;
-  onEdit: () => void;
-  onDelete: () => void;
-  keywords: any[];
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: attachment.id,
-  });
-
-  const style = {
-    transform: transform
-      ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
-      : undefined,
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 1 : 0,
-  };
-
-  // Render different attachment types
-  const renderAttachment = () => {
-    switch (attachment.type) {
-      case AttachmentType.NOTE:
-        return (
-          <NoteAttachmentCard
-            id={attachment.id}
-            title={attachment.name}
-            content={attachment.content || ""}
-            updatedAt={attachment.updatedAt}
-            keywords={keywords}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onUpdate={onUpdate}
-          />
-        );
-
-      case AttachmentType.FACT_SOURCE:
-        return (
-          <FactSourceCard
-            id={attachment.id}
-            title={attachment.name}
-            url={attachment.url || ""}
-            quote={attachment.content || ""}
-            onEdit={onEdit}
-            onDelete={onDelete}
-          />
-        );
-
-      case AttachmentType.FILE:
-      case AttachmentType.LINK:
-      case AttachmentType.IMAGE:
-      default:
-        // Generic attachment card for other types
-        return (
-          <div className="rounded-lg border p-3 hover:bg-muted/50">
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-2">
-                <div className="rounded bg-muted p-2">
-                  {attachment.type === AttachmentType.FILE && (
-                    <FileText className="h-4 w-4" />
-                  )}
-                  {attachment.type === AttachmentType.LINK && (
-                    <LinkIcon className="h-4 w-4" />
-                  )}
-                  {attachment.type === AttachmentType.IMAGE && (
-                    <ImageIcon className="h-4 w-4" />
-                  )}
-                </div>
-                <div>
-                  <h4 className="font-medium">{attachment.name}</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Added by {attachment.user?.name || "Unknown"} on{" "}
-                    {format(new Date(attachment.createdAt), "MMM d, yyyy")}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={onEdit}
-                >
-                  <FileEdit className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-destructive"
-                  onClick={onDelete}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        );
-    }
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      {renderAttachment()}
     </div>
   );
 }

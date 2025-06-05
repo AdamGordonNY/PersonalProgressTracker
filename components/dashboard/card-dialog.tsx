@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card as PrismaCard } from "@prisma/client";
-
+import type { AttachmentType } from "@prisma/client";
 // Extend Card type to include keywords, factSources, and attachments
 type Keyword = { id: string; name: string; cardId: string };
 type FactSource = {
@@ -25,18 +25,25 @@ type FactSource = {
   cardId: string;
   screenshot: string | null;
 };
+
 type Attachment = {
   id: string;
   name: string;
-  url: string;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  url: string | null;
+  type: AttachmentType;
+  content: string | null;
   fileType: string;
-  provider: string;
+  provider: string | null;
+  cardId: string;
 };
 
 type Card = PrismaCard & {
-  keywords?: Keyword[];
-  factSources?: FactSource[];
-  attachments?: Attachment[];
+  keywords: Keyword[];
+  factSources: FactSource[];
+  attachments: Attachment[];
 };
 import {
   Trash2,
@@ -60,6 +67,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  createAttachment,
+  deleteAttachment,
+  updateAttachment,
+} from "@/actions/attachment";
+import { AttachmentManager } from "../notes/attachment-manager";
 
 interface CardDialogProps {
   card: Card;
@@ -93,6 +106,48 @@ export function CardDialog({
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState("details");
+  const [attachments, setAttachments] = useState<
+    (Attachment & { user: { name: string | null } })[]
+  >(
+    (card.attachments || []).map((a) => ({
+      ...a,
+      user: { name: null }, // Default user if missing
+    }))
+  );
+  const [isLoadingAttachments, setIsLoadingAttachments] = useState(false);
+  const fetchAttachments = async () => {
+    setIsLoadingAttachments(true);
+    try {
+      const response = await fetch(`/api/cards/${card.id}/attachments`);
+      if (!response.ok) throw new Error("Failed to fetch attachments");
+      const data = await response.json();
+      setAttachments(
+        data.map((a: Attachment & { user?: { name: string | null } }) => ({
+          ...a,
+          user: a.user ?? { name: null },
+        }))
+      );
+    } catch (error) {
+      console.error("Error fetching attachments:", error);
+    } finally {
+      setIsLoadingAttachments(false);
+    }
+  };
+  useEffect(() => {
+    setAttachments(
+      (card.attachments || []).map((a) => ({
+        ...a,
+        user: { name: null },
+      }))
+    );
+  }, [card]);
+  // Fetch attachments when the dialog opens
+  useEffect(() => {
+    if (open) {
+      fetchAttachments();
+    }
+  }, [open, card.id]);
 
   const handleSave = () => {
     setIsSubmitting(true);
@@ -113,6 +168,17 @@ export function CardDialog({
 
   const handleDelete = () => {
     onDeleteCard(card.id);
+    onUpdateCard(card.id, {
+      title: editedCard.title,
+      description: editedCard.description!,
+      keywords: editedCard.keywords?.map((k) => k.name) || [],
+      factSources:
+        editedCard.factSources?.map((s) => ({
+          title: s.title,
+          url: s.url || "",
+          quote: s.quote || "",
+        })) || [],
+    });
     setShowDeleteDialog(false);
     onOpenChange(false);
   };
@@ -171,7 +237,65 @@ export function CardDialog({
         editedCard.factSources?.filter((s) => s.id !== sourceId) || [],
     });
   };
+  const handleCreateAttachment = async (data: any) => {
+    try {
+      const result = await createAttachment({
+        ...data,
+        cardId: card.id,
+      });
 
+      if ("error" in result) {
+        throw new Error(result.error);
+      }
+
+      // UPDATE local state
+      setAttachments((prev) => [
+        ...prev,
+        {
+          ...result.attachment,
+          url: result.attachment.url ?? "",
+          user: { name: null }, // Ensure user property is present
+        },
+      ]);
+    } catch (error) {
+      console.error("Error creating attachment:", error);
+      throw error;
+    }
+  };
+
+  const handleUpdateAttachment = async (id: string, data: any) => {
+    try {
+      const result = await updateAttachment(id, data);
+
+      if ("error" in result) {
+        throw new Error(result.error);
+      }
+
+      // UPDATE local state
+      setAttachments((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, ...data } : a))
+      );
+    } catch (error) {
+      console.error("Error updating attachment:", error);
+      throw error;
+    }
+  };
+  const handleDeleteAttachment = async (id: string) => {
+    try {
+      const result = await deleteAttachment(id);
+
+      if ("error" in result) {
+        throw new Error(result.error);
+      }
+
+      // UPDATE local state
+      setAttachments((prev) => prev.filter((a) => a.id !== id));
+    } catch (error) {
+      console.error("Error deleting attachment:", error);
+      throw error;
+    }
+  };
+  const keywordNames = editedCard.keywords?.map((k) => k.name) || [];
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -347,46 +471,14 @@ export function CardDialog({
             </TabsContent>
 
             <TabsContent value="attachments" className="space-y-4">
-              <div>
-                <Label>Attachments</Label>
-                <div className="mt-2 space-y-2">
-                  {editedCard.attachments?.map((attachment) => (
-                    <div
-                      key={attachment.id}
-                      className="flex items-center justify-between rounded-lg border p-3"
-                    >
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">{attachment.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {attachment.fileType} • {attachment.provider}
-                          </p>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="icon" asChild>
-                        <a
-                          href={attachment.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <Link className="h-4 w-4" />
-                        </a>
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-                <Button
-                  variant="outline"
-                  className="mt-4 w-full"
-                  onClick={() => {
-                    /* Open cloud file picker */
-                  }}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Attachment
-                </Button>
-              </div>
+              <AttachmentManager
+                cardId={card.id}
+                attachments={attachments}
+                onCreateAttachment={handleCreateAttachment}
+                onUpdateAttachment={handleUpdateAttachment}
+                onDeleteAttachment={handleDeleteAttachment}
+                keywords={keywordNames} // Pass string array
+              />
             </TabsContent>
           </Tabs>
 

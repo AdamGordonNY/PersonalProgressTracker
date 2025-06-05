@@ -43,6 +43,30 @@ export function DashboardHeader() {
               Feeds
             </Link>
             <Link
+              href="/golf"
+              className="text-sm font-medium hover:text-primary"
+            >
+              Golf
+            </Link>
+            <Link
+              href="/posture"
+              className="text-sm font-medium hover:text-primary"
+            >
+              Feeds
+            </Link>{" "}
+            <Link
+              href="/questionniares"
+              className="text-sm font-medium hover:text-primary"
+            >
+              Questionniares
+            </Link>{" "}
+            <Link
+              href="/settings"
+              className="text-sm font-medium hover:text-primary"
+            >
+              Settings
+            </Link>
+            <Link
               href="/privacy"
               className="text-sm font-medium hover:text-primary"
             >
