@@ -123,3 +123,58 @@ declare module "@clerk/nextjs/server" {
     lastTokenRefresh?: string;
   }
 }
+export interface PostureSettings {
+  enabled: boolean;
+  interval: number; // in minutes
+  workStartHour: number; // 0-23
+  workEndHour: number; // 0-23
+  workDays: number[]; // 0-6 (Sunday-Saturday)
+  soundEnabled: boolean;
+  soundVolume: number; // 0-1
+  notificationsEnabled: boolean;
+  autoPauseInMeetings: boolean;
+  autoPauseDuringFocus: boolean;
+  snoozeOptions: number[]; // in minutes
+}
+
+export interface PainLog {
+  id: string;
+  timestamp: number; // Unix timestamp
+  level: number; // 0-10
+  location: PainLocation;
+  notes?: string;
+}
+
+export enum PainLocation {
+  NECK = "neck",
+  UPPER_BACK = "upper_back",
+  LOWER_BACK = "lower_back",
+  SHOULDERS = "shoulders",
+  WRISTS = "wrists",
+  OTHER = "other",
+}
+
+export interface PostureState {
+  isActive: boolean;
+  lastReminder: number | null; // Unix timestamp
+  nextReminder: number | null; // Unix timestamp
+  snoozeUntil: number | null; // Unix timestamp
+  inMeeting: boolean;
+  inFocusMode: boolean;
+  painLogs: PainLog[];
+}
+
+export interface PostureAlarmHook {
+  settings: PostureSettings;
+  state: PostureState;
+  updateSettings: (newSettings: Partial<PostureSettings>) => void;
+  startReminders: () => void;
+  stopReminders: () => void;
+  snooze: (minutes: number) => void;
+  logPain: (level: number, location: PainLocation, notes?: string) => void;
+  clearLogs: () => void;
+  getPainLogs: (days?: number) => PainLog[];
+  dismissReminder: () => void;
+  setInMeeting: (inMeeting: boolean) => void;
+  setInFocusMode: (inFocusMode: boolean) => void;
+}
