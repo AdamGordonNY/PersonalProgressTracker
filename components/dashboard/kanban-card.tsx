@@ -82,6 +82,8 @@ export function KanbanCard({ card }: KanbanCardProps) {
             ...keyword,
             cardId: card.id,
           })),
+          factSources: (card as any).factSources ?? [],
+          attachments: (card as any).attachments ?? [],
         }}
         open={open}
         onOpenChange={setOpen}
