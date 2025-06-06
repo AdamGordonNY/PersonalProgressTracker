@@ -1,9 +1,10 @@
-import GolfDashboard from "@/components/golf-logger/golf-dashboard";
+import { MusicMastery } from "@/components/music-mastery/music-mastery";
 import { db } from "@/lib/db";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import React from "react";
 
-export default async function GolfPage() {
+const Page = async () => {
   const { userId } = await auth();
 
   if (!userId) {
@@ -19,5 +20,7 @@ export default async function GolfPage() {
   if (!features.golf_tracker) {
     redirect("/dashboard");
   }
-  return <GolfDashboard />;
-}
+  return <MusicMastery />;
+};
+
+export default Page;

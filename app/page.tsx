@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { FileText, Layers, CheckSquare, Clock } from "lucide-react";
+import { db } from "@/lib/db";
+import { getUserOnboardingStatus } from "@/actions/user";
 
 export default async function Home() {
   const { userId } = await auth();
@@ -10,7 +12,12 @@ export default async function Home() {
   if (userId) {
     redirect("/dashboard");
   }
+  const onboardingCheck = await getUserOnboardingStatus(userId!);
 
+  // If onboarding is not completed, redirect to onboarding
+  if (onboardingCheck === false) {
+    redirect("/onboarding");
+  }
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">

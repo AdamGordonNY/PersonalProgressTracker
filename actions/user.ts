@@ -10,8 +10,8 @@ import {
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { CloudTokens } from "@/lib/types";
 import { NextResponse } from "next/server";
-
-export async function handleUserEvent(userId: string, eventData: any) {
+import { WebhookEvent } from "@clerk/nextjs/server";
+export async function handleUserEvent(userId: string, eventData: WebhookEvent) {
   try {
     const client = await clerkClient();
 
@@ -332,5 +332,84 @@ export async function handleUserDeleted(eventData: any) {
       { error: "User deletion failed" },
       { status: 500 }
     );
+  }
+}
+export async function updateUserFeatures(
+  userId: string,
+  features: Record<string, boolean>,
+  onboardingCompleted: boolean = false
+) {
+  try {
+    // Get existing features from user
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { features: true },
+    });
+
+    // Merge existing features with new ones
+    const updatedFeatures = {
+      ...((user?.features as Record<string, boolean>) || {}),
+      ...features,
+    };
+
+    // Update user features and optionally mark onboarding as completed
+    await db.user.update({
+      where: { id: userId },
+      data: {
+        features: updatedFeatures,
+        ...(onboardingCompleted ? { onboardingCompleted: true } : {}),
+      },
+    });
+    const client = await clerkClient();
+    // Also update Clerk metadata for client-side access
+
+    await client.users.updateUser(userId, {
+      publicMetadata: {
+        features: updatedFeatures,
+        onboardingCompleted: onboardingCompleted || undefined,
+      },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating user features:", error);
+    return { success: false, error: "Failed to update user features" };
+  }
+}
+
+export async function getUserFeatures(userId: string) {
+  try {
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: {
+        features: true,
+        onboardingCompleted: true,
+      },
+    });
+
+    return {
+      features: (user?.features as Record<string, boolean>) || {},
+      onboardingCompleted: user?.onboardingCompleted || false,
+    };
+  } catch (error) {
+    console.error("Error getting user features:", error);
+    return {
+      features: {},
+      onboardingCompleted: false,
+      error: "Failed to get user features",
+    };
+  }
+}
+export async function getUserOnboardingStatus(userId: string) {
+  try {
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { onboardingCompleted: true },
+    });
+
+    return user?.onboardingCompleted || false;
+  } catch (error) {
+    console.error("Error getting user onboarding status:", error);
+    return false;
   }
 }

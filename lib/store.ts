@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { Board, Column, User } from "@prisma/client";
 import { Card } from "@/lib/types";
 import * as boardActions from "@/actions/board";
@@ -333,3 +334,161 @@ export const useBoard = create<BoardState>((set, get) => ({
     }
   },
 }));
+
+export interface WidgetPosition {
+  x: number;
+  y: number;
+}
+
+export interface WidgetSize {
+  width: number;
+  height: number;
+}
+
+export interface WidgetState {
+  isMinimized: boolean;
+  position: WidgetPosition;
+  size: WidgetSize;
+  zIndex: number;
+}
+
+interface UIState {
+  // Widget states
+  focusFortress: WidgetState;
+  timeGuardian: WidgetState;
+  postureChecker: WidgetState;
+
+  // Global UI state
+  highestZIndex: number;
+
+  // Actions
+  toggleMinimized: (
+    widget: keyof Pick<
+      UIState,
+      "focusFortress" | "timeGuardian" | "postureChecker"
+    >
+  ) => void;
+  updatePosition: (
+    widget: keyof Pick<
+      UIState,
+      "focusFortress" | "timeGuardian" | "postureChecker"
+    >,
+    position: WidgetPosition
+  ) => void;
+  updateSize: (
+    widget: keyof Pick<
+      UIState,
+      "focusFortress" | "timeGuardian" | "postureChecker"
+    >,
+    size: WidgetSize
+  ) => void;
+  bringToFront: (
+    widget: keyof Pick<
+      UIState,
+      "focusFortress" | "timeGuardian" | "postureChecker"
+    >
+  ) => void;
+  resetPositions: () => void;
+}
+
+const defaultWidgetState: WidgetState = {
+  isMinimized: false,
+  position: { x: 20, y: 20 },
+  size: { width: 300, height: 400 },
+  zIndex: 1000,
+};
+
+const getDefaultPosition = (index: number): WidgetPosition => ({
+  x: 20 + index * 20,
+  y: 20 + index * 20,
+});
+
+export const useUIStore = create<UIState>()(
+  persist(
+    (set, get) => ({
+      // Initial widget states with offset positions to avoid overlap
+      focusFortress: {
+        ...defaultWidgetState,
+        position: getDefaultPosition(0),
+        zIndex: 1000,
+      },
+      timeGuardian: {
+        ...defaultWidgetState,
+        position: getDefaultPosition(1),
+        zIndex: 1001,
+      },
+      postureChecker: {
+        ...defaultWidgetState,
+        position: getDefaultPosition(2),
+        zIndex: 1002,
+      },
+
+      highestZIndex: 1002,
+
+      toggleMinimized: (widget) =>
+        set((state) => ({
+          [widget]: {
+            ...state[widget],
+            isMinimized: !state[widget].isMinimized,
+          },
+        })),
+
+      updatePosition: (widget, position) =>
+        set((state) => ({
+          [widget]: {
+            ...state[widget],
+            position,
+          },
+        })),
+
+      updateSize: (widget, size) =>
+        set((state) => ({
+          [widget]: {
+            ...state[widget],
+            size,
+          },
+        })),
+
+      bringToFront: (widget) =>
+        set((state) => {
+          const newZIndex = state.highestZIndex + 1;
+          return {
+            [widget]: {
+              ...state[widget],
+              zIndex: newZIndex,
+            },
+            highestZIndex: newZIndex,
+          };
+        }),
+
+      resetPositions: () =>
+        set((state) => ({
+          focusFortress: {
+            ...state.focusFortress,
+            position: getDefaultPosition(0),
+            isMinimized: false,
+          },
+          timeGuardian: {
+            ...state.timeGuardian,
+            position: getDefaultPosition(1),
+            isMinimized: false,
+          },
+          postureChecker: {
+            ...state.postureChecker,
+            position: getDefaultPosition(2),
+            isMinimized: false,
+          },
+        })),
+    }),
+    {
+      name: "ui-preferences",
+      // Only persist certain parts of the state
+      partialize: (state) => ({
+        focusFortress: state.focusFortress,
+        timeGuardian: state.timeGuardian,
+        postureChecker: state.postureChecker,
+        highestZIndex: state.highestZIndex,
+      }),
+    }
+  )
+);

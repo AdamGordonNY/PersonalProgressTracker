@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Footer } from "@/components/footer";
 import { PostureReminderUI } from "@/components/posture-reminder/posture-reminder-ui";
 import { PostureNotification } from "@/components/posture-reminder/posture-notification";
-
+import { FloatingWidgets } from "@/components/floating-widgets/floating-widgets";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -33,8 +33,7 @@ export default function RootLayout({
             {children}
             <Footer />
             <Toaster />
-            <PostureReminderUI />
-            <PostureNotification />
+            <FloatingWidgets />
           </ThemeProvider>
         </body>
       </html>
