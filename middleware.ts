@@ -1,12 +1,13 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
+import { getUserOnboardingStatus } from "./actions/user";
 const isOnboardingRoute = createRouteMatcher(["/onboarding"]);
 
 export default clerkMiddleware(async (auth, req: NextRequest) => {
   const { userId, sessionClaims, redirectToSignIn } = await auth();
 
   // For users visiting /onboarding, don't try to redirect
-  if (userId && isOnboardingRoute(req)) {
+  if (!userId && isOnboardingRoute(req)) {
     return NextResponse.next();
   }
 
@@ -16,7 +17,8 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
 
   // Catch users who do not have `onboardingComplete: true` in their publicMetadata
   // Redirect them to the /onboarding route to complete onboarding
-  if (userId && !sessionClaims?.metadata?.onboardingComplete) {
+  if (userId && isOnboardingRoute(req)) {
+    sessionClaims.onboardingComplete = true;
     const onboardingUrl = new URL("/onboarding", req.url);
     return NextResponse.redirect(onboardingUrl);
   }
