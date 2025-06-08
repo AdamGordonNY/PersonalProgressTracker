@@ -1,7 +1,15 @@
 import "server-only";
 import { createClient } from "redis";
 
-// Redis Client Setup
+// Redis Client Setup with lazy connection
+const redisClient = createClient({
+  url: process.env.REDIS_URL,
+  socket: {
+    reconnectStrategy: (retries) => Math.min(retries * 100, 3000),
+  },
+});
+
+redisClient.on("error", (err) => console.error("Redis Error:", err));
 
 // Connection handling with error checking
 export const connectRedis = async () => {
@@ -16,21 +24,8 @@ export const connectRedis = async () => {
   }
 };
 
-const redisClient = createClient({
-  url: process.env.REDIS_URL,
-  socket: {
-    reconnectStrategy: (retries) => Math.min(retries * 100, 3000),
-  },
-});
-
-redisClient.on("error", (err) => console.error("Redis Error:", err));
-
-// Connect once when the module is loaded
-(async () => {
-  await redisClient.connect();
-})();
-
 export { redisClient };
+
 // Microsoft Token Specific Functions
 export const setMicrosoftToken = async (userId: string, token: string) => {
   try {

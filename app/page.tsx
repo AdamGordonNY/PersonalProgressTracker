@@ -3,21 +3,15 @@ import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { FileText, Layers, CheckSquare, Clock } from "lucide-react";
-import { db } from "@/lib/db";
-import { getUserOnboardingStatus } from "@/actions/user";
 
 export default async function Home() {
   const { userId } = await auth();
 
+  // If user is authenticated, redirect to dashboard
   if (userId) {
     redirect("/dashboard");
   }
-  const onboardingCheck = await getUserOnboardingStatus(userId!);
 
-  // If onboarding is not completed, redirect to onboarding
-  if (onboardingCheck === false) {
-    redirect("/onboarding");
-  }
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
@@ -73,52 +67,7 @@ export default async function Home() {
                         3
                       </span>
                     </div>
-                    {/* <div className="space-y-2">
-                      <div className="rounded-md border bg-white p-3 shadow-sm">
-                        <h4 className="font-medium">
-                          Social Media Trends 2025
-                        </h4>
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-800">
-                            Research
-                          </span>
-                          <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs text-purple-800">
-                            Social Media
-                          </span>
-                        </div>
-                      </div>
-                      <div className="rounded-md border bg-white p-3 shadow-sm">
-                        <h4 className="font-medium">AI Ethics Series</h4>
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
-                            Educational
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  */}{" "}
                   </div>
-                  {/* <div className="flex w-72 flex-col rounded-md border bg-slate-50 p-2">
-                    <div className="mb-2 flex items-center justify-between">
-                      <h3 className="font-medium">Research</h3>
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sage-100 text-xs text-sage-600">
-                        2
-                      </span>
-                    </div>
-                    <div className="rounded-md border bg-white p-3 shadow-sm">
-                      <h4 className="font-medium">
-                        Climate Change Documentary
-                      </h4>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800">
-                          Environment
-                        </span>
-                        <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
-                          Educational
-                        </span>
-                      </div>
-                    </div>
-                  </div> */}
                 </div>
               </div>
             </div>
