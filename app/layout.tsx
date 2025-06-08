@@ -5,7 +5,8 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { Footer } from "@/components/footer";
-
+import { PostureReminderUI } from "@/components/posture-reminder/posture-reminder-ui";
+import { PostureNotification } from "@/components/posture-reminder/posture-notification";
 import { FloatingWidgets } from "@/components/floating-widgets/floating-widgets";
 const inter = Inter({ subsets: ["latin"] });
 

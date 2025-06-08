@@ -1,46 +1,30 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
-
+import { getUserOnboardingStatus } from "./actions/user";
 const isOnboardingRoute = createRouteMatcher(["/onboarding"]);
-const isProtectedRoute = createRouteMatcher([
-  "/dashboard(.*)",
-  "/settings(.*)",
-  "/feeds(.*)",
-  "/questionnaires(.*)",
-  "/golf(.*)",
-  "/cloud(.*)",
-  "/music-mastery(.*)",
-  "/posture(.*)"
-]);
 
 export default clerkMiddleware(async (auth, req: NextRequest) => {
   const { userId, sessionClaims, redirectToSignIn } = await auth();
 
-  // If the user isn't signed in and the route is protected, redirect to sign-in
-  if (!userId && isProtectedRoute(req)) {
+  // For users visiting /onboarding, don't try to redirect
+  if (!userId && isOnboardingRoute(req)) {
+    return NextResponse.next();
+  }
+
+  // If the user isn't signed in and the route is private, redirect to sign-in
+  if (!userId && !isOnboardingRoute(req))
     return redirectToSignIn({ returnBackUrl: req.url });
+
+  // Catch users who do not have `onboardingComplete: true` in their publicMetadata
+  // Redirect them to the /onboarding route to complete onboarding
+  if (userId && isOnboardingRoute(req)) {
+    sessionClaims.onboardingComplete = true;
+    const onboardingUrl = new URL("/onboarding", req.url);
+    return NextResponse.redirect(onboardingUrl);
   }
 
-  // If user is signed in
-  if (userId) {
-    // Check if onboarding is completed
-    const onboardingComplete = sessionClaims?.publicMetadata?.onboardingComplete as boolean;
-    
-    // If user hasn't completed onboarding and is not on onboarding page, redirect to onboarding
-    if (!onboardingComplete && !isOnboardingRoute(req)) {
-      const onboardingUrl = new URL("/onboarding", req.url);
-      return NextResponse.redirect(onboardingUrl);
-    }
-    
-    // If user has completed onboarding and is on onboarding page, redirect to dashboard
-    if (onboardingComplete && isOnboardingRoute(req)) {
-      const dashboardUrl = new URL("/dashboard", req.url);
-      return NextResponse.redirect(dashboardUrl);
-    }
-  }
-
-  // Allow the request to proceed
-  return NextResponse.next();
+  // If the user is logged in and the route is protected, let them view.
+  if (userId && !isOnboardingRoute(req)) return NextResponse.next();
 });
 
 export const config = {

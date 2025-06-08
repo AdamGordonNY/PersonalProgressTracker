@@ -4,8 +4,8 @@ import Dashboard from "@/components/dashboard/dashboard";
 import { createOrUpdateUserToken } from "@/actions/user";
 
 export default async function DashboardPage() {
-  const { userId, sessionClaims } = await auth();
-  console.log(sessionClaims);
+  const { userId } = await auth();
+
   if (!userId) {
     redirect("/sign-in");
   }
