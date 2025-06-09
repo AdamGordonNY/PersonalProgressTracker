@@ -1,18 +1,19 @@
+import type { NextConfig } from "next";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  webpack: (config) => {
+  webpack: (config: any) => {
     config.resolve.fallback = {
       ...config.resolve.fallback,
       crypto: false,
       http: false,
       https: false,
-      net: false
+      net: false,
     };
     return config;
   },
-  experimental: {
-    serverComponentsExternalPackages: ['googleapis', 'https-proxy-agent'], missingSuspenseWithCSRBailout: false,
-  },
+
+  serverExternalPackages: ["googleapis", "https-proxy-agent"],
+  missingSuspenseWithCSRBailout: false,
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -45,11 +46,14 @@ const nextConfig = {
       {
         source: `/api/feeds/parse`,
         headers: [
-          { key: 'Access-Control-Allow-Origin', value: 'https://adam-gordon.info' }
-        ]
+          {
+            key: "Access-Control-Allow-Origin",
+            value: "https://adam-gordon.info",
+          },
+        ],
       },
-    ]
-  }
+    ];
+  },
 };
 
 module.exports = nextConfig;

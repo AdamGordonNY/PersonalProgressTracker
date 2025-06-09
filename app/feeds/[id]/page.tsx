@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { FeedDetail } from "@/components/feed-manager/feed-detail";
+import { Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export async function generateMetadata({
   params,
@@ -58,7 +60,31 @@ export default async function FeedPage({ params }: { params: { id: string } }) {
       })),
     };
 
-    return <FeedDetail feed={serializableFeed} />;
+    return (
+      <Suspense
+        fallback={
+          <div className="container mx-auto p-4">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-8 w-8 rounded-md" />
+                <div>
+                  <Skeleton className="h-8 w-64 rounded-md" />
+                  <Skeleton className="h-4 w-96 rounded-md mt-1" />
+                </div>
+              </div>
+              <Skeleton className="h-10 w-32 rounded-md" />
+            </div>
+            <div className="space-y-6">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-48 rounded-md" />
+              ))}
+            </div>
+          </div>
+        }
+      >
+        <FeedDetail feed={serializableFeed} />
+      </Suspense>
+    );
   } catch (error) {
     console.error("Error fetching feed:", error);
     return (

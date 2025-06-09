@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { FileText, Layers, CheckSquare, Clock } from "lucide-react";
+import { Footer } from "@/components/footer";
 
 export default async function Home() {
   const { userId } = await auth();
@@ -101,61 +102,7 @@ export default async function Home() {
           </div>
         </section>
       </main>
-      <footer className="border-t bg-muted/40">
-        <div className="container flex flex-col gap-4 py-10 md:px-6 md:py-12">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Layers className="h-5 w-5 text-sage-600" />
-              <span className="text-lg font-semibold">ContentBoard</span>
-            </div>
-            <nav className="hidden gap-4 sm:flex">
-              <Link
-                href="#"
-                className="text-sm text-muted-foreground hover:underline"
-              >
-                Features
-              </Link>
-              <Link
-                href="#"
-                className="text-sm text-muted-foreground hover:underline"
-              >
-                Pricing
-              </Link>
-              <Link
-                href="#"
-                className="text-sm text-muted-foreground hover:underline"
-              >
-                About
-              </Link>
-              <Link
-                href="#"
-                className="text-sm text-muted-foreground hover:underline"
-              >
-                Contact
-              </Link>
-            </nav>
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-muted-foreground">
-              © 2025 ContentBoard. All rights reserved.
-            </p>
-            <nav className="flex gap-4">
-              <Link
-                href="#"
-                className="text-xs text-muted-foreground hover:underline"
-              >
-                Terms
-              </Link>
-              <Link
-                href="#"
-                className="text-xs text-muted-foreground hover:underline"
-              >
-                Privacy
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

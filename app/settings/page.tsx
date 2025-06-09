@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { FeatureToggle } from "@/components/onboarding/feature-toggle";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@radix-ui/react-tabs";
 import { UserCircle, ToggleLeft, Sliders } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SettingsPage() {
   const { user } = useUser();
@@ -91,7 +92,9 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="features">
-          <FeatureToggle />
+          <Suspense fallback={<Skeleton className="h-[500px] rounded-md" />}>
+            <FeatureToggle />
+          </Suspense>
         </TabsContent>
 
         <TabsContent value="integrations">

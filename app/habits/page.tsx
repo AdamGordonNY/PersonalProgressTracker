@@ -2,6 +2,8 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { HabitTracker } from "@/components/habits/habit-tracker";
 import { db } from "@/lib/db";
+import { Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default async function HabitsPage() {
   const { userId } = await auth();
@@ -23,5 +25,24 @@ export default async function HabitsPage() {
   //   redirect("/dashboard");
   // }
 
-  return <HabitTracker />;
+  return (
+    <Suspense
+      fallback={
+        <div className="container mx-auto p-4">
+          <div className="h-10 w-64 rounded-md bg-muted mb-6"></div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="h-32 rounded-md" />
+            ))}
+          </div>
+          <div className="mt-8 grid gap-6 lg:grid-cols-3">
+            <Skeleton className="h-[500px] rounded-md lg:col-span-2" />
+            <Skeleton className="h-[500px] rounded-md" />
+          </div>
+        </div>
+      }
+    >
+      <HabitTracker />
+    </Suspense>
+  );
 }
