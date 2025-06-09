@@ -3,9 +3,10 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 export async function GET(
-  req: Request,
-  { params }: { params: { boardId: string } }
+  request: Request,
+  { params }: { params: Promise<{ boardId: string }> }
 ) {
+  const { boardId } = await params;
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -14,7 +15,7 @@ export async function GET(
 
     const board = await db.board.findUnique({
       where: {
-        id: params.boardId,
+        id: boardId,
         userId,
       },
       include: {
