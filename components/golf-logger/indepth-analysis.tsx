@@ -12,7 +12,7 @@ interface GolfDashboardProps {
   initialRounds: (GolfRound & { course?: GolfCourse })[];
 }
 
-export function GolfDashboard({ initialRounds }: GolfDashboardProps) {
+export default function CourseDashboard({ initialRounds }: GolfDashboardProps) {
   const [courseData, setCourseData] = useState<any>(null);
   const [activeRound, setActiveRound] = useState<GolfRound | null>(null);
 
