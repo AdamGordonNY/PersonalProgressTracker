@@ -188,3 +188,29 @@ export const getBoardDetails = async (boardId: string) => {
     return { error: "Failed to load board details" };
   }
 };
+export const getBoardsWithData = async () => {
+  try {
+    const boards = await db.board.findMany({
+      include: {
+        columns: {
+          include: {
+            cards: {
+              include: {
+                keywords: true,
+                attachments: true,
+                factSources: true,
+                Note: true,
+              },
+            },
+          },
+          orderBy: { order: "asc" },
+        },
+      },
+      orderBy: { order: "asc" },
+    });
+
+    return { boards };
+  } catch (error) {
+    return { error: "Failed to fetch boards with data" };
+  }
+};

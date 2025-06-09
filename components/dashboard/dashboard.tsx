@@ -9,7 +9,10 @@ import { FocusFortress } from "@/components/focus-fortress/focus-fortress";
 import { useBoard } from "@/lib/store";
 import { Spinner } from "@/components/ui/spinner";
 import { Board } from "@prisma/client";
-
+import { BoardsWithColumnsAndCards } from "@/lib/types";
+interface DashboardProps {
+  initialData: BoardsWithColumnsAndCards[];
+}
 export default function Dashboard({ userId }: { userId: string }) {
   const { isLoading, error, fetchBoards, setActiveBoard, getDefaultBoard } =
     useBoard();

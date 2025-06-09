@@ -14,7 +14,12 @@ interface BoardState {
   isLoading: boolean;
   error: string | null;
   isReordering: boolean;
-  user: User | null;
+  hydrate: (data: {
+    boards: Board[];
+    activeBoard: Board | null;
+    columns: Column[];
+    cards: Card[];
+  }) => void;
 
   getDefaultBoard: () => Promise<Board[] | void>;
 
@@ -70,7 +75,16 @@ export const useBoard = create<BoardState>((set, get) => ({
   isLoading: false,
   error: null,
   isReordering: false,
-  user: null,
+  hydrate: (data) => {
+    set({
+      boards: data.boards,
+      activeBoard: data.activeBoard,
+      columns: data.columns,
+      cards: data.cards,
+      isLoading: false,
+      error: null,
+    });
+  },
   getDefaultBoard: async () => {
     set({ isLoading: true, error: null });
     try {

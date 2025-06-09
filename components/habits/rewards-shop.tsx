@@ -1,10 +1,11 @@
 "use client";
 
-import { motion } from 'framer-motion';
-import { X, Gift, Lock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { motion } from "framer-motion";
+import { X, Gift, Lock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 
 interface RewardsShopProps {
   coins: number;
@@ -14,29 +15,35 @@ interface RewardsShopProps {
 
 const rewards = [
   {
-    id: '1',
-    name: 'Satire Meme Feed',
-    description: 'Unlock a curated feed of content-related memes',
+    id: "1",
+    name: "Satire Meme Feed",
+    description: "Unlock a curated feed of content-related memes",
     cost: 100,
   },
   {
-    id: '2',
-    name: 'Extended Break',
-    description: 'Take an extra 15-minute break',
+    id: "2",
+    name: "Extended Break",
+    description: "Take an extra 15-minute break",
     cost: 50,
   },
   {
-    id: '3',
-    name: 'Custom Theme',
-    description: 'Unlock custom color themes for your dashboard',
+    id: "3",
+    name: "Custom Theme",
+    description: "Unlock custom color themes for your dashboard",
     cost: 200,
   },
 ];
 
 export function RewardsShop({ coins, onClose, onPurchase }: RewardsShopProps) {
+  const { toast } = useToast();
+
   const handlePurchase = (cost: number) => {
     if (coins >= cost) {
       onPurchase(cost);
+      toast({
+        title: "Reward Purchased",
+        description: "You've successfully redeemed this reward!",
+      });
     }
   };
 
@@ -95,7 +102,7 @@ export function RewardsShop({ coins, onClose, onPurchase }: RewardsShopProps) {
                     Locked
                   </>
                 ) : (
-                  'Redeem'
+                  "Redeem"
                 )}
               </Button>
             </Card>

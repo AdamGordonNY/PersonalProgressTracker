@@ -20,6 +20,7 @@ import { useUser } from "@clerk/nextjs";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { getUserFeatures } from "@/actions/user";
+
 export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { boards, activeBoard, setActiveBoard, createBoard } = useBoard();
@@ -29,6 +30,7 @@ export function Sidebar() {
   const [isLoadingFeatures, setIsLoadingFeatures] = useState(true);
   const { user } = useUser();
   const pathname = usePathname();
+
   const handleCreateBoard = () => {
     createBoard({
       title: "New Board",

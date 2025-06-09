@@ -1,9 +1,60 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-
+import {
+  ArrowUpCircle,
+  ClipboardList,
+  Cloud,
+  LayoutDashboard,
+  Music4Icon,
+  Plus,
+  RssIcon,
+  Settings,
+  WeightIcon,
+} from "lucide-react";
 import { ClubType } from "@prisma/client";
 import { ShotType } from "@prisma/client";
-
+export const appRoutes = [
+  {
+    href: "/dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    href: "/cloud",
+    label: "Cloud Storage",
+    icon: Cloud,
+  },
+  {
+    href: "/golf",
+    label: "Golf Tracker",
+    icon: WeightIcon,
+  },
+  {
+    href: "/posture",
+    label: "Posture Guardian",
+    icon: ArrowUpCircle,
+  },
+  {
+    href: "/feeds",
+    label: "RSS Feeds",
+    icon: RssIcon,
+  },
+  {
+    href: "/settings",
+    label: "Settings",
+    icon: Settings,
+  },
+  {
+    href: "/music-mastery",
+    label: "Music Mastery",
+    icon: Music4Icon,
+  },
+  {
+    href: "/todos",
+    label: "Todos",
+    icon: ClipboardList,
+  },
+];
 export const shotTypeToString = (shot: ShotType): string => {
   const map: Record<ShotType, string> = {
     DRIVE: "Drive",

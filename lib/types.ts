@@ -178,3 +178,18 @@ export interface PostureAlarmHook {
   setInMeeting: (inMeeting: boolean) => void;
   setInFocusMode: (inFocusMode: boolean) => void;
 }
+export interface BoardsWithColumnsAndCards {
+  id: string;
+  title: string;
+  description: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  columns: {
+    id: string;
+    title: string;
+    order: number;
+    createdAt: Date;
+    updatedAt: Date;
+    cards: Card[];
+  }[];
+}

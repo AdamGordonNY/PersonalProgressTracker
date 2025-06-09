@@ -413,3 +413,55 @@ export async function getUserOnboardingStatus(userId: string) {
     return false;
   }
 }
+export async function getUserFeeds(userId: string) {
+  try {
+    const feeds = await db.feed.findMany({
+      where: { userId },
+    });
+
+    if (!feeds) return null;
+
+    return feeds;
+  } catch (error) {
+    console.error("Error getting user feeds:", error);
+    return null;
+  }
+}
+export async function getUserWithData({ userId }: { userId?: string }) {
+  try {
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      include: {
+        feeds: true,
+        attachments: true,
+        factSources: true,
+        keywords: true,
+
+        cards: true,
+        columns: true,
+        boards: {
+          include: {
+            columns: {
+              include: {
+                cards: {
+                  include: {
+                    attachments: true,
+                    factSources: true,
+                    keywords: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!user) return null;
+
+    return user;
+  } catch (error) {
+    console.error("Error getting user with data:", error);
+    return null;
+  }
+}
