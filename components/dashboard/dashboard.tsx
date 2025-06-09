@@ -45,7 +45,6 @@ export default function Dashboard({ userId }: { userId: string }) {
 
   return (
     <div className="flex h-screen bg-muted/20">
-      <Sidebar />
       <div className="flex flex-1 flex-col">
         <DashboardHeader />
         <main className="flex-1 overflow-auto p-4">
