@@ -47,7 +47,6 @@ export default async function RootLayout({
               {userId && <Sidebar />}
               <div className="flex flex-1 flex-col">{children}</div>
             </div>
-            {children}
             <Footer />
             <Toaster />
             <FloatingWidgets />
