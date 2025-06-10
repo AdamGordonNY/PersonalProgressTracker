@@ -9,14 +9,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 export async function generateMetadata({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }): Promise<Metadata> {
+  const { id } = await params;
   const { userId } = await auth();
   if (!userId) return { title: "Feed Not Found" };
 
   try {
     const feed = await db.feed.findUnique({
-      where: { id: params.id, userId },
+      where: { id: id, userId },
     });
 
     if (!feed) return { title: "Feed Not Found" };
@@ -30,13 +31,17 @@ export async function generateMetadata({
   }
 }
 
-export default async function FeedPage({ params }: { params: { id: string } }) {
+export default async function FeedPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { userId } = await auth();
   if (!userId) notFound();
-
+  const { id } = await params;
   try {
     const feed = await db.feed.findUnique({
-      where: { id: params.id, userId },
+      where: { id: id, userId },
       include: {
         entries: {
           orderBy: { published: "desc" },

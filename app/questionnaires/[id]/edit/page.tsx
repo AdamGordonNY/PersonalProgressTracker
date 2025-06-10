@@ -8,15 +8,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default async function EditQuestionnairePage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const { userId } = await auth();
 
   if (!userId) {
     redirect("/sign-in");
   }
 
-  const result = await getQuestionnaire(params.id);
+  const result = await getQuestionnaire(id);
 
   if ("error" in result) {
     redirect("/questionnaires");
