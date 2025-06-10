@@ -4,9 +4,10 @@ import { NextResponse } from "next/server";
 
 export async function GET(
   req: Request,
-  { params }: { params: { columnId: string } }
+  { params }: { params: Promise<{ columnId: string }> }
 ) {
   try {
+    const { columnId } = await params;
     const { userId } = await auth();
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -14,7 +15,7 @@ export async function GET(
 
     const cards = await db.card.findMany({
       where: {
-        columnId: params.columnId,
+        columnId: columnId,
         userId,
       },
       include: {

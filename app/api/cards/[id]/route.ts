@@ -4,9 +4,10 @@ import { NextResponse } from "next/server";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const { userId } = await auth();
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -14,7 +15,7 @@ export async function GET(
 
     const card = await db.card.findUnique({
       where: {
-        id: params.id,
+        id: id,
         userId,
       },
       include: {
@@ -38,9 +39,10 @@ export async function GET(
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const { userId } = await auth();
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -51,7 +53,7 @@ export async function PUT(
 
     const card = await db.card.update({
       where: {
-        id: params.id,
+        id: id,
         userId,
       },
       data: {
@@ -92,9 +94,10 @@ export async function PUT(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const { userId } = await auth();
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -102,7 +105,7 @@ export async function DELETE(
 
     await db.card.delete({
       where: {
-        id: params.id,
+        id: id,
         userId,
       },
     });

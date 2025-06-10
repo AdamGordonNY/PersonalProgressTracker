@@ -4,16 +4,17 @@ import { db } from "@/lib/db";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const { userId } = await auth();
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
     const feed = await db.feed.findUnique({
-      where: { id: params.id, userId },
+      where: { id: id, userId },
       include: {
         entries: {
           orderBy: { published: "desc" },
@@ -35,16 +36,17 @@ export async function GET(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const { userId } = await auth();
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
     await db.feed.delete({
-      where: { id: params.id, userId },
+      where: { id: id, userId },
     });
 
     return new NextResponse(null, { status: 204 });

@@ -4,15 +4,16 @@ import { NextResponse } from "next/server";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const { userId } = await auth();
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const questionnaireId = params.id;
+    const questionnaireId = id;
 
     // Check if user owns the questionnaire
     const questionnaire = await db.questionnaire.findFirst({

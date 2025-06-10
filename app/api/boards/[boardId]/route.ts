@@ -52,9 +52,10 @@ export async function GET(
 
 export async function PUT(
   req: Request,
-  { params }: { params: { boardId: string } }
+  { params }: { params: Promise<{ boardId: string }> }
 ) {
   try {
+    const { boardId } = await params;
     const { userId } = await auth();
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -64,7 +65,7 @@ export async function PUT(
 
     const board = await db.board.update({
       where: {
-        id: params.boardId,
+        id: boardId,
         userId,
       },
       data: {
@@ -83,17 +84,17 @@ export async function PUT(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { boardId: string } }
+  { params }: { params: Promise<{ boardId: string }> }
 ) {
   try {
     const { userId } = await auth();
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
-
+    const { boardId } = await params;
     await db.board.delete({
       where: {
-        id: params.boardId,
+        id: boardId,
         userId,
       },
     });

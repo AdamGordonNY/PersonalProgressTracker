@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     if (!redisClient.isOpen) {
       await redisClient.connect();
     }
-    const ip = headers().get("x-forwarded-for");
+    const ip = (await headers()).get("x-forwarded-for");
     const rateKey = `rate-limit:${ip}`;
     const count = await redisClient.incr(rateKey);
     if (count === 1) await redisClient.expire(rateKey, 60);
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     }
 
     // Header validation
-    const headerPayload = headers();
+    const headerPayload = await headers();
     const svix_id = headerPayload.get("svix-id");
     const svix_timestamp = headerPayload.get("svix-timestamp");
     const svix_signature = headerPayload.get("svix-signature");

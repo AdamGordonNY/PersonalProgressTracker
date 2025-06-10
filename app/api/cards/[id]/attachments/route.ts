@@ -5,16 +5,17 @@ import { AttachmentType } from "@prisma/client";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const { userId } = await auth();
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
     // Get the card ID from the URL parameter
-    const cardId = params.id;
+    const cardId = id;
 
     // Check if the card exists and belongs to the user
     const card = await db.card.findUnique({
@@ -49,16 +50,16 @@ export async function GET(
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
-
+    const { id } = await params;
     // Get the card ID from the URL parameter
-    const cardId = params.id;
+    const cardId = id;
 
     // Parse the request body
     const {

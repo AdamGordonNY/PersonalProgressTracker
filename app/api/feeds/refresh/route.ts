@@ -5,16 +5,18 @@ import { auth } from "@clerk/nextjs/server";
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const { userId } = await auth();
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
     const feed = await db.feed.findUnique({
-      where: { id: params.id, userId },
+      where: { id: id, userId },
     });
 
     if (!feed) {

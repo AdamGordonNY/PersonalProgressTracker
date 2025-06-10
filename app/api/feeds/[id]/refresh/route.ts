@@ -7,8 +7,9 @@ import { rateLimiter } from "@/lib/redis";
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   let userId: string | null = null;
   try {
     const authResult = await auth();
@@ -26,7 +27,7 @@ export async function POST(
 
     // Check if feed exists
     const feed = await db.feed.findUnique({
-      where: { id: params.id, userId },
+      where: { id: id, userId },
     });
     if (!feed) {
       return new NextResponse("Feed not found", { status: 404 });
@@ -102,7 +103,7 @@ export async function POST(
   } catch (error) {
     console.error("Error refreshing feed:", {
       message: error instanceof Error ? error.message : String(error),
-      feedId: params.id,
+      feedId: id,
       userId: userId,
     });
     return new NextResponse("Internal Server Error", { status: 500 });
