@@ -6,15 +6,15 @@ import { getRound } from "@/actions/golf";
 export default async function RoundDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const { userId } = await auth();
 
   if (!userId) {
     redirect("/sign-in");
   }
-
-  const result = await getRound(params.id);
+  const id = await params.then((p) => p.id);
+  const result = await getRound(id!);
 
   if ("error" in result) {
     notFound();
