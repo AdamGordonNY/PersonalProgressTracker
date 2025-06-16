@@ -1,9 +1,9 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Dashboard from "@/components/dashboard/dashboard";
-import { createOrUpdateUserToken } from "@/actions/user";
 import { db } from "@/lib/db";
 import { Suspense } from "react";
+import { appRoutes } from "@/lib/utils";
 
 export default async function DashboardPage() {
   const { userId } = await auth();
@@ -11,6 +11,10 @@ export default async function DashboardPage() {
   if (!userId) {
     redirect("/sign-in");
   }
+  const routes = appRoutes.map((route) => ({
+    ...route,
+    icon: route.icon ? <route.icon /> : null,
+  }));
   const initialData = await db.board.findMany({
     where: { userId },
     include: {

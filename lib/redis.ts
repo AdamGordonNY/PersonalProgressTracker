@@ -28,7 +28,7 @@ export async function getRedis() {
     redisClient = getRedisClient();
     await redisClient.connect();
   }
-
+  console.log("Using Redis client:", redisClient);
   return redisClient;
 }
 
@@ -60,3 +60,9 @@ export async function rateLimiter(
     return true;
   }
 }
+export const redis = createClient({
+  url: process.env.REDIS_URL!,
+});
+
+redis.on("error", (err) => console.error("Redis error:", err));
+redis.connect();

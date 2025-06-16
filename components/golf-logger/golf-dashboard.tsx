@@ -14,6 +14,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { NewRoundDialog } from "./new-round-dialog";
 import { GolfRound, GolfCourse } from "@prisma/client";
+import { useDock } from "@/context/dock-context";
+import { FloatingDock } from "../ui/floating-dock";
 export default function GolfDashboard() {
   const [activeTab, setActiveTab] = useState("scorecard");
   const [showNewRoundDialog, setShowNewRoundDialog] = useState(false);
@@ -22,7 +24,7 @@ export default function GolfDashboard() {
   const [courses, setCourses] = useState<GolfCourse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-
+  const { items } = useDock();
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -239,7 +241,7 @@ export default function GolfDashboard() {
           <CourseMap />
         </TabsContent>
       </Tabs>
-
+      <FloatingDock items={items} />
       <NewRoundDialog
         open={showNewRoundDialog}
         onOpenChange={setShowNewRoundDialog}

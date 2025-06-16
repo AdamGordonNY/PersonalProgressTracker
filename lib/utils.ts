@@ -11,47 +11,58 @@ import {
   Settings,
   WeightIcon,
 } from "lucide-react";
+import { IconBubbleX } from "@tabler/icons-react";
 import { ClubType } from "@prisma/client";
 import { ShotType } from "@prisma/client";
 export const appRoutes = [
   {
     href: "/dashboard",
-    label: "Dashboard",
+    title: "Dashboard",
     icon: LayoutDashboard,
   },
   {
     href: "/cloud",
-    label: "Cloud Storage",
+    title: "Cloud Storage",
     icon: Cloud,
   },
   {
     href: "/golf",
-    label: "Golf Tracker",
+    title: "Golf Tracker",
     icon: WeightIcon,
   },
   {
     href: "/posture",
-    label: "Posture Guardian",
+    title: "Posture Guardian",
     icon: ArrowUpCircle,
   },
   {
+    href: "/habits",
+    title: "Habits",
+    icon: Plus,
+  },
+  {
     href: "/feeds",
-    label: "RSS Feeds",
+    title: "RSS Feeds",
     icon: RssIcon,
   },
   {
     href: "/settings",
-    label: "Settings",
+    title: "Settings",
     icon: Settings,
   },
   {
     href: "/music-mastery",
-    label: "Music Mastery",
+    title: "Music Mastery",
     icon: Music4Icon,
   },
   {
-    href: "/todos",
-    label: "Todos",
+    href: "/knowledge",
+    title: "Knowledge Base",
+    icon: IconBubbleX,
+  },
+  {
+    href: "/questionnaires",
+    title: "Questionnaires",
     icon: ClipboardList,
   },
 ];

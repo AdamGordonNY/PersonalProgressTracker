@@ -10,13 +10,16 @@ import { useBoard } from "@/lib/store";
 import { Spinner } from "@/components/ui/spinner";
 import { Board } from "@prisma/client";
 import { BoardsWithColumnsAndCards } from "@/lib/types";
+import { useDock } from "@/context/dock-context";
+import { FloatingDock } from "../ui/floating-dock";
 interface DashboardProps {
   initialData: BoardsWithColumnsAndCards[];
 }
+
 export default function Dashboard({ userId }: { userId: string }) {
   const { isLoading, error, fetchBoards, setActiveBoard, getDefaultBoard } =
     useBoard();
-
+  const { items } = useDock();
   useEffect(() => {
     const initialize = async () => {
       await getDefaultBoard();
@@ -44,11 +47,12 @@ export default function Dashboard({ userId }: { userId: string }) {
   }
 
   return (
-    <div className="flex h-screen bg-muted/20">
+    <div className="flex h-screen-dock bg-muted/20">
       <div className="flex flex-1 flex-col">
         <DashboardHeader />
         <main className="flex-1 overflow-auto p-4">
           <KanbanBoard />
+          <FloatingDock items={items} />
         </main>
       </div>
       <TimeGuardian />

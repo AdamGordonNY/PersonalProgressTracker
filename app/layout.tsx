@@ -8,10 +8,12 @@ import { Footer } from "@/components/footer";
 import { PostureReminderUI } from "@/components/posture-reminder/posture-reminder-ui";
 import { PostureNotification } from "@/components/posture-reminder/posture-notification";
 import { FloatingWidgets } from "@/components/floating-widgets/floating-widgets";
-
+import { FloatingDock } from "@/components/ui/floating-dock";
 import { getUserWithData } from "@/actions/user";
 import { auth } from "@clerk/nextjs/server";
 import { Sidebar } from "@/components/dashboard/sidebar";
+import { appRoutes } from "@/lib/utils";
+import { DockProvider } from "@/context/dock-context";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -24,13 +26,13 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  let user;
+  // Convert icon from component type to ReactNode (element)
+
   const { userId } = await auth();
-  if (!userId) {
-    user = null;
-  } else {
-    user = await getUserWithData({ userId: userId! });
-  }
+  const routes = appRoutes.map((route) => ({
+    ...route,
+    icon: route.icon ? <route.icon /> : null,
+  }));
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
@@ -41,15 +43,18 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {" "}
-            <div className="flex min-h-screen bg-muted/20">
-              {/* Only show sidebar when user is authenticated */}
-              {userId && <Sidebar />}
-              <div className="flex flex-1 flex-col">{children}</div>
-            </div>
-            <Footer />
-            <Toaster />
-            <FloatingWidgets />
+            <DockProvider items={routes}>
+              {" "}
+              <div className="flex min-h-screen bg-muted/20">
+                {/* Only show sidebar when user is authenticated */}
+                {userId && <Sidebar />}
+                <div className="flex flex-1 flex-col">{children} </div>
+              </div>
+              {/* <div className="flex items-center justify-center h-[35rem] w-full"></div> */}
+              <Footer />
+              <Toaster />
+              <FloatingWidgets />
+            </DockProvider>
           </ThemeProvider>
         </body>
       </html>

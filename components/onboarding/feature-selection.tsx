@@ -98,6 +98,13 @@ export function FeatureSelection({ userId }: FeatureSelectionProps) {
       icon: <Music2Icon className="h-6 w-6 text-pink-600" />,
       enabled: false,
     },
+    {
+      id: "habit_tracker",
+      name: "Habit Tracker",
+      description: "Track your daily habits and routines",
+      icon: <CheckCircle2 className="h-6 w-6 text-teal-600" />,
+      enabled: false,
+    },
   ]);
 
   const toggleFeature = (id: string) => {

@@ -19,6 +19,7 @@ import {
   getHabitCompletions,
 } from "@/actions/habit";
 import { Completion, Habit } from "@prisma/client";
+import { useDock } from "@/context/dock-context";
 
 type HabitWithCompletions = Habit & {
   completions: Completion[];
@@ -33,7 +34,7 @@ export function HabitTracker() {
   const [weeklyProgress, setWeeklyProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-
+  const { items } = useDock();
   // Fetch habits and user stats
   useEffect(() => {
     const fetchData = async () => {

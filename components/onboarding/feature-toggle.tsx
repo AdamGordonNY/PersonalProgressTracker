@@ -95,7 +95,7 @@ export function FeatureToggle() {
           const result = await getUserFeatures(user.id);
 
           if (result.error) {
-            throw new Error(result.error);
+            throw new Error(String(result?.error));
           }
 
           // Initialize with defaults if some features are missing
@@ -107,7 +107,8 @@ export function FeatureToggle() {
             rss_feeds: false,
             cloud_storage: false,
             questionnaires: false,
-            music_mastery: false, // New feature added
+            music_mastery: false,
+            habit_tracker: false, // Assuming habit tracker is a future feature
           };
 
           setFeatures({

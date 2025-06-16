@@ -1,295 +1,22 @@
 "use server";
 
 import { db } from "@/lib/db";
-import {
-  encrypt,
-  decrypt,
-  setMicrosoftToken,
-  getMicrosoftToken,
-} from "@/lib/encryption";
-import { auth, clerkClient } from "@clerk/nextjs/server";
-import { CloudTokens } from "@/lib/types";
+import { getMicrosoftToken, redisClient } from "@/lib/encryption";
+import { clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { WebhookEvent } from "@clerk/nextjs/server";
-export async function handleUserEvent(userId: string, eventData: WebhookEvent) {
-  try {
-    const client = await clerkClient();
 
-    // Get fresh OAuth tokens from Clerk
-    const [googleTokenRes, microsoftTokenRes] = await Promise.allSettled([
-      client.users.getUserOauthAccessToken(userId, "google"),
-      client.users.getUserOauthAccessToken(userId, "microsoft"),
-    ]);
-
-    const cloudTokens: Record<string, string> = {};
-
-    // Handle Google token
-    if (
-      googleTokenRes.status === "fulfilled" &&
-      googleTokenRes.value.data.length > 0
-    ) {
-      cloudTokens.google = googleTokenRes.value.data[0].token;
-    }
-
-    // Handle Microsoft token
-    if (
-      microsoftTokenRes.status === "fulfilled" &&
-      microsoftTokenRes.value.data.length > 0
-    ) {
-      cloudTokens.microsoft = microsoftTokenRes.value.data[0].token;
-    }
-    console.log("Cloud tokens retrieved:", cloudTokens);
-    // Only update if we have valid tokens
-    if (Object.keys(cloudTokens).length > 0) {
-      const updateResult = await updateUserCloudTokens(userId, cloudTokens);
-      if (!updateResult.success) {
-        console.error("Failed to update cloud tokens:", updateResult.error);
-      }
-    }
-
-    // Always update subscription status
-    await updateUserSubscription(userId, "free");
-  } catch (error) {
-    console.error("Error processing user event:", error);
-  }
-}
-// actions/user.ts
-export async function updateUserCloudTokens(
-  userId: string,
-  tokens: CloudTokens
-) {
-  try {
-    const client = await clerkClient();
-    // Encrypt tokens
-    await setMicrosoftToken(userId, tokens.microsoft!);
-
-    // Update database
-    await db.userMicrosoftToken.upsert({
-      where: { id: userId },
-      create: {
-        userId: userId,
-        accessToken: (await getMicrosoftToken(userId!)) ?? "",
-        refreshToken: "", // Assuming you don't store refresh tokens
-        expiresAt: new Date(Date.now() + 3600 * 1000), // Set expiry to 1 hour from now
-      },
-      update: {
-        accessToken: (await getMicrosoftToken(userId!)) ?? "",
-        expiresAt: new Date(Date.now() + 3600 * 1000), // Update expiry to 1 hour from now
-      },
-    });
-
-    // Update Clerk metadata with token presence and hash
-    client.users.updateUserMetadata(userId, {
-      publicMetadata: {
-        cloudAccess: {
-          google: !!tokens.google,
-          microsoft: !!tokens.microsoft,
-        },
-        // Add secure token reference (not the actual token)
-        tokenHash: encrypt(tokens.microsoft!),
-      },
-    });
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error updating cloud tokens:", error);
-    return { success: false, error: "Failed to update cloud tokens" };
-  }
-}
-
-// lib/security.ts
-
-// export function createTokenHash(token: string | undefined) {
-//   if (!token) return null;
-
-//   return nodeCrypto
-//     .createHash("sha256")
-//     .update(token + process.env.ENCRYPTION_KEY!)
-//     .digest("hex");
-// }
-export async function getUserCloudTokens(userId: string) {
-  try {
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: { cloudTokens: true },
-    });
-
-    if (!user?.cloudTokens) return null;
-
-    // Decrypt tokens
-    const decryptedEntries = await Promise.all(
-      Object.entries(user.cloudTokens).map(async ([key, value]) => {
-        return [key, await decrypt(value)];
-      })
-    );
-    return Object.fromEntries(decryptedEntries) as Record<string, string>;
-  } catch (error) {
-    console.error("Error getting cloud tokens:", error);
-    return null;
-  }
-}
-
-export async function updateUserSubscription(
-  userId: string,
-  tier: "free" | "pro"
-) {
-  try {
-    await (
-      await clerkClient()
-    ).users.updateUser(userId, {
-      publicMetadata: {
-        subscriptionTier: tier,
-      },
-    });
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error updating subscription:", error);
-    return { success: false, error: "Failed to update subscription" };
-  }
-}
-export async function getUserCards() {
-  try {
-    const { userId } = await auth();
-    const user = await db.user.findUnique({
-      where: { id: userId! },
-      include: {
-        cards: true,
-      },
-    });
-
-    if (!user?.cards) return null;
-
-    return user.cards;
-  } catch (error) {
-    console.error("Error getting user cards:", error);
-    return null;
-  }
-}
-export async function createOrUpdateUserToken({ userId }: { userId: string }) {
-  try {
-    const client = await clerkClient();
-    const user = await db.user.findFirstOrThrow({
-      where: { id: userId! },
-    });
-    if (user) {
-      const [googleTokenRes, microsoftTokenRes] = await Promise.allSettled([
-        client.users.getUserOauthAccessToken(userId!, "google"),
-        client.users.getUserOauthAccessToken(userId!, "microsoft"),
-      ]);
-      await setMicrosoftToken(
-        userId!,
-        microsoftTokenRes.status === "fulfilled" &&
-          microsoftTokenRes.value.data.length > 0
-          ? microsoftTokenRes.value.data[0].token
-          : ""
-      );
-
-      await db.userMicrosoftToken.create({
-        data: {
-          userId: userId!,
-          accessToken:
-            microsoftTokenRes.status === "fulfilled" &&
-            microsoftTokenRes.value.data.length > 0
-              ? microsoftTokenRes.value.data[0].token
-              : "",
-          refreshToken: "",
-          expiresAt: new Date(0),
-        },
-      });
-    }
-  } catch (error) {
-    console.error("Error creating or updating user:", error);
-  }
-}
-
-export async function handleSessionCreated(eventData: any) {
-  try {
-    const client = await clerkClient();
-    const { access_token, refresh_token, expires_in, user_id } = eventData;
-
-    const user = await db.user.findUnique({
-      where: { id: user_id },
-    });
-
-    if (!user) {
-      const msToken = await getMicrosoftToken(user_id);
-
-      // Update metadata with token verification
-      await client.users.updateUserMetadata(user_id, {
-        publicMetadata: {
-          microsoftVerified: !!msToken,
-          lastTokenRefresh: new Date().toISOString(),
-        },
-      });
-      await db.userMicrosoftToken.update({
-        where: { id: user_id },
-        data: {
-          accessToken: msToken || "",
-          expiresAt: new Date(Date.now() + 3600 * 1000), // Set expiry to 1 hour from now
-        },
-      });
-      const response = NextResponse.json({ success: true });
-      response.cookies.set("ms_token", msToken || "", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-      });
-
-      return response;
-    }
-
-    return NextResponse.json({ status: "Token exists" }, { status: 200 });
-  } catch (error) {
-    console.error("Session creation failed:", error);
-    return NextResponse.json(
-      { error: "Session processing failed" },
-      { status: 500 }
-    );
-  }
-}
-
+// User management functions
 export async function handleUserCreated(eventData: any) {
   try {
     const { id, email_addresses, first_name, last_name } = eventData;
 
-    // Create user with transaction
-    const result = await db.$transaction(async (tx) => {
-      const user = await tx.user.create({
-        data: {
-          id,
-          email: email_addresses[0]?.email_address,
-          name: `${first_name || ""} ${last_name || ""}`.trim() || null,
-        },
-      });
-
-      // Create default board structure
-      const board = await tx.board.create({
-        data: {
-          title: "My First Board",
-          description: "Welcome to your content board!",
-          order: 0,
-          userId: user.id,
-        },
-      });
-
-      // Create default columns
-      const columns = ["Ideas", "Research", "In Progress", "Done"].map(
-        (title, index) => ({
-          title,
-          order: index,
-          boardId: board.id,
-          userId: user.id,
-        })
-      );
-
-      await tx.column.createMany({ data: columns });
-
-      return user;
+    const user = await db.user.create({
+      data: {
+        id,
+        email: email_addresses[0]?.email_address || "",
+        name: `${first_name || ""} ${last_name || ""}`.trim() || null,
+      },
     });
-
-    await createOrUpdateUserToken({ userId: result.id });
-    await updateUserSubscription(result.id, "free");
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
@@ -308,12 +35,11 @@ export async function handleUserUpdated(eventData: any) {
     await db.user.update({
       where: { id },
       data: {
-        email: email_addresses[0]?.email_address,
+        email: email_addresses[0]?.email_address || "",
         name: `${first_name || ""} ${last_name || ""}`.trim() || null,
       },
     });
 
-    await createOrUpdateUserToken({ userId: id });
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error("User update failed:", error);
@@ -324,6 +50,9 @@ export async function handleUserUpdated(eventData: any) {
 export async function handleUserDeleted(eventData: any) {
   try {
     const { id } = eventData;
+    if (redisClient.isOpen) {
+      await redisClient.del(`user:${id}:onedrive`);
+    }
     await db.user.delete({ where: { id } });
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
@@ -334,39 +63,64 @@ export async function handleUserDeleted(eventData: any) {
     );
   }
 }
+
+export async function handleSessionCreated(eventData: any) {
+  try {
+    const { user_id } = eventData;
+    return NextResponse.json({ status: "Session processed" }, { status: 200 });
+  } catch (error) {
+    console.error("Session creation failed:", error);
+    return NextResponse.json(
+      { error: "Session processing failed" },
+      { status: 500 }
+    );
+  }
+}
+
+// Token management
+export async function storeUserMicrosoftToken(
+  userId: string,
+  tokenData: {
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: number;
+  }
+) {
+  if (!redisClient.isOpen) await redisClient.connect();
+
+  await redisClient.hSet(`user:${userId}:onedrive`, {
+    accessToken: tokenData.accessToken,
+    refreshToken: tokenData.refreshToken,
+    expiresAt: tokenData.expiresAt.toString(),
+  });
+
+  // Set expiration (30 days)
+  await redisClient.expire(`user:${userId}:onedrive`, 2592000);
+}
+
+export async function getUserMicrosoftToken(userId: string) {
+  if (!redisClient.isOpen) await redisClient.connect();
+
+  const tokens = await redisClient.hGetAll(`user:${userId}:onedrive`);
+
+  return {
+    accessToken: tokens.accessToken,
+    refreshToken: tokens.refreshToken,
+    expiresAt: parseInt(tokens.expiresAt || "0"),
+  };
+}
+
 export async function updateUserFeatures(
   userId: string,
   features: Record<string, boolean>,
   onboardingCompleted: boolean = false
 ) {
   try {
-    // Get existing features from user
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: { features: true },
-    });
-
-    // Merge existing features with new ones
-    const updatedFeatures = {
-      ...((user?.features as Record<string, boolean>) || {}),
-      ...features,
-    };
-
-    // Update user features and optionally mark onboarding as completed
-    await db.user.update({
-      where: { id: userId },
-      data: {
-        features: updatedFeatures,
-        ...(onboardingCompleted ? { onboardingCompleted: true } : {}),
-      },
-    });
     const client = await clerkClient();
-    // Also update Clerk metadata for client-side access
-
     await client.users.updateUser(userId, {
       publicMetadata: {
-        features: updatedFeatures,
-        onboardingCompleted: onboardingCompleted || undefined,
+        features,
+        onboardingCompleted,
       },
     });
 
@@ -379,89 +133,47 @@ export async function updateUserFeatures(
 
 export async function getUserFeatures(userId: string) {
   try {
-    const user = await db.user.findUnique({
+    const user = await db.user.findFirst({
       where: { id: userId },
       select: {
         features: true,
         onboardingCompleted: true,
       },
     });
-
     return {
       features: (user?.features as Record<string, boolean>) || {},
       onboardingCompleted: user?.onboardingCompleted || false,
+      error: null,
     };
   } catch (error) {
     console.error("Error getting user features:", error);
     return {
       features: {},
       onboardingCompleted: false,
-      error: "Failed to get user features",
+      error: "Error Getting User Features",
     };
   }
 }
-export async function getUserOnboardingStatus(userId: string) {
-  try {
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: { onboardingCompleted: true },
-    });
 
-    return user?.onboardingCompleted || false;
-  } catch (error) {
-    console.error("Error getting user onboarding status:", error);
-    return false;
-  }
-}
-export async function getUserFeeds(userId: string) {
+// Data access
+export async function getUserWithData(userId: string) {
   try {
-    const feeds = await db.feed.findMany({
-      where: { userId },
-    });
-
-    if (!feeds) return null;
-
-    return feeds;
-  } catch (error) {
-    console.error("Error getting user feeds:", error);
-    return null;
-  }
-}
-export async function getUserWithData({ userId }: { userId?: string }) {
-  try {
-    const user = await db.user.findUnique({
+    return await db.user.findUnique({
       where: { id: userId },
       include: {
-        feeds: true,
-        attachments: true,
-        factSources: true,
-        keywords: true,
-
-        cards: true,
-        columns: true,
         boards: {
           include: {
             columns: {
               include: {
-                cards: {
-                  include: {
-                    attachments: true,
-                    factSources: true,
-                    keywords: true,
-                  },
-                },
+                cards: true,
               },
             },
           },
         },
       },
     });
-
-    if (!user) return null;
-
-    return user;
   } catch (error) {
-    console.error("Error getting user with data:", error);
+    console.error("Error getting user data:", error);
     return null;
   }
 }

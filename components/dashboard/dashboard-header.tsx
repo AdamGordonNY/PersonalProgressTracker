@@ -9,6 +9,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useBoard } from "@/lib/store";
 import Link from "next/link";
 import { BoardEditorDialog } from "./board-editor-dialog";
+import { FloatingDock } from "../ui/floating-dock";
+import { appRoutes } from "@/lib/utils";
 
 export function DashboardHeader() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -29,7 +31,7 @@ export function DashboardHeader() {
               {activeBoard?.title || "Content Board"}
             </Button>
           </div>
-          <nav className="ml-4 hidden items-center space-x-4 md:flex">
+          {/* <nav className="ml-4 hidden items-center space-x-4 md:flex">
             <Link
               href="/dashboard"
               className="text-sm font-medium hover:text-primary"
@@ -78,7 +80,7 @@ export function DashboardHeader() {
             >
               Terms
             </Link>
-          </nav>
+          </nav> */}
         </div>
         <div className="flex flex-1 items-center justify-end gap-4">
           <div className="relative hidden max-w-sm flex-1 md:block">

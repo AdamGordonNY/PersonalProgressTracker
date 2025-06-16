@@ -10,6 +10,7 @@ import {
   handleUserUpdated,
 } from "@/actions/user";
 import { redisClient } from "@/lib/encryption";
+import { storeMicrosoftTokens } from "@/lib/tokens";
 
 const MAX_REQUESTS_PER_MINUTE = 100;
 
@@ -60,12 +61,15 @@ export async function POST(req: Request) {
     // Handle specific event types
     switch (evt.type) {
       case "session.created":
+        await handleExternalAccount(evt.data);
         return handleSessionCreated(evt.data);
 
       case "user.created":
+        await handleExternalAccount(evt.data);
         return handleUserCreated(evt.data);
 
       case "user.updated":
+        await handleExternalAccount(evt.data);
         return handleUserUpdated(evt.data);
 
       case "user.deleted":
@@ -87,4 +91,22 @@ export async function POST(req: Request) {
   } finally {
     await db.$disconnect();
   }
+}
+async function handleExternalAccount(data: any) {
+  if (data.provider === "microsoft") {
+    const userId = data.user_id;
+    const accessToken = data.access_token;
+    const refreshToken = data.refresh_token;
+    const expiresAt = Date.now() + data.expires_in * 1000;
+
+    const success = await storeMicrosoftTokens(userId, {
+      accessToken,
+      refreshToken,
+      expiresAt,
+    });
+    console.log(success);
+
+    return NextResponse.json({ success: true });
+  }
+  return NextResponse.json({ ignored: true });
 }

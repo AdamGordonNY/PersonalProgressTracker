@@ -13,13 +13,13 @@ export const initializeGoogleDrive = () => {
   return google.drive({ version: "v3", auth: oauth2Client });
 };
 
-export const initializeOneDrive = () => {
+export function initializeOneDrive(accessToken: string) {
   return Client.init({
     authProvider: (done) => {
       done(null, process.env.MICROSOFT_ACCESS_TOKEN!);
     },
   });
-};
+}
 
 export async function hasMicrosoftToken(userId: string) {
   const token = await db.userMicrosoftToken.findUnique({

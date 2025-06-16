@@ -1,53 +1,11 @@
-import { PrismaClient } from "@prisma/client";
-import { decrypt } from "./encryption";
 // lib/microsoft-auth.ts
-import { getMicrosoftToken, setMicrosoftToken } from "./encryption";
+import { decrypt } from "./encryption";
+import { getRedis } from "@/lib/redis";
+import { clerkClient } from "@clerk/nextjs/server";
+import { db } from "./db";
 
-export async function getValidMicrosoftToken(userId: string) {
-  try {
-    const token = await getMicrosoftToken(userId);
-
-    if (!token) return null;
-
-    // Verify token expiration
-    const tokenData = JSON.parse(
-      Buffer.from(token.split(".")[1], "base64").toString()
-    );
-
-    if (tokenData.exp * 1000 < Date.now()) {
-      // Refresh token logic
-      const newToken = await refreshMicrosoftToken(userId);
-      await setMicrosoftToken(userId, newToken);
-      return newToken;
-    }
-
-    return token;
-  } catch (error) {
-    console.error("Token validation failed:", error);
-    return null;
-  }
-}
-export async function refreshMicrosoftToken(refreshToken: string) {
-  const response = await fetch(
-    "https://login.microsoftonline.com/common/oauth2/v2.0/token",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        client_id: process.env.MICROSOFT_CLIENT_ID!,
-        client_secret: process.env.MICROSOFT_CLIENT_SECRET!,
-        refresh_token: refreshToken,
-        grant_type: "refresh_token",
-      }),
-    }
-  );
-  return response.json();
-}
-
-// Token expiration check
-export function isTokenExpired(token: string) {
+// Token expiration check utility
+export function isTokenExpired(token: string): boolean {
   try {
     const { exp } = JSON.parse(
       Buffer.from(token.split(".")[1], "base64").toString()
@@ -58,22 +16,91 @@ export function isTokenExpired(token: string) {
   }
 }
 
-const prisma = new PrismaClient();
-
-export async function getGoogleTokens(userId: string) {
+// Microsoft token management
+export async function getMicrosoftAccessToken(
+  userId: string
+): Promise<string | null> {
   try {
-    const tokens = await prisma.userGoogleToken.findUnique({
-      where: { userId },
-      select: {
-        accessToken: true,
-        refreshToken: true,
-        expiresAt: true,
-      },
+    const redis = await getRedis();
+    const key = `user:${userId}:onedrive`;
+
+    const tokenData = await redis.hGetAll(key);
+    if (!tokenData.accessToken) return null;
+
+    // Return valid token if not expired
+    if (!isTokenExpired(tokenData.accessToken)) {
+      return tokenData.accessToken;
+    }
+
+    // Refresh token if expired
+    const newTokens = await refreshMicrosoftToken(
+      tokenData.refreshToken,
+      tokenData.accessToken
+    );
+
+    await redis.hSet(key, {
+      accessToken: newTokens.access_token,
+      refreshToken: newTokens.refresh_token || tokenData.refreshToken,
+      expiresAt: (Date.now() + newTokens.expires_in * 1000).toString(),
     });
 
-    if (!tokens) {
-      throw new Error("No Google tokens found for user");
+    return newTokens.access_token;
+  } catch (error) {
+    console.error("Failed to get Microsoft token:", error);
+    return null;
+  }
+}
+
+export async function refreshMicrosoftToken(
+  refreshToken: string,
+  fallbackToken: string
+) {
+  const params = new URLSearchParams({
+    client_id: process.env.MICROSOFT_CLIENT_ID!,
+    client_secret: process.env.MICROSOFT_CLIENT_SECRET!,
+    refresh_token: refreshToken,
+    grant_type: "refresh_token",
+    scope: "Files.Read offline_access",
+  });
+
+  const response = await fetch(
+    "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params,
     }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`Refresh failed: ${response.status} - ${errorText}`);
+
+    // Fallback to previous token if refresh fails
+    if (!isTokenExpired(fallbackToken)) {
+      console.warn("Using fallback token despite refresh failure");
+      return {
+        access_token: fallbackToken,
+        refresh_token: refreshToken,
+        expires_in: 3600, // 1 hour fallback
+      };
+    }
+
+    throw new Error("Token refresh failed with no valid fallback");
+  }
+
+  return response.json();
+}
+
+// Google token management (unchanged)
+export async function getGoogleTokens(userId: string) {
+  try {
+    const tokens = await db.userGoogleToken.findUnique({
+      where: { userId },
+      select: { accessToken: true, refreshToken: true, expiresAt: true },
+    });
+
+    if (!tokens) throw new Error("No Google tokens found for user");
 
     return {
       accessToken: decrypt(tokens.accessToken),
@@ -83,31 +110,5 @@ export async function getGoogleTokens(userId: string) {
   } catch (error) {
     console.error("Error retrieving Google tokens:", error);
     throw new Error("Failed to retrieve Google tokens");
-  }
-}
-
-export async function getMicrosoftTokens(userId: string) {
-  try {
-    const tokens = await prisma.userMicrosoftToken.findUnique({
-      where: { userId },
-      select: {
-        accessToken: true,
-        refreshToken: true,
-        expiresAt: true,
-      },
-    });
-
-    if (!tokens) {
-      throw new Error("No Microsoft tokens found for user");
-    }
-
-    return {
-      accessToken: decrypt(tokens.accessToken),
-      refreshToken: decrypt(tokens.refreshToken),
-      expiresAt: tokens.expiresAt,
-    };
-  } catch (error) {
-    console.error("Error retrieving Microsoft tokens:", error);
-    throw new Error("Failed to retrieve Microsoft tokens");
   }
 }

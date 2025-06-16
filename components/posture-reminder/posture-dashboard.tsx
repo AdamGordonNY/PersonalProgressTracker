@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PostureReminderUI } from "@/components/posture-reminder/posture-reminder-ui";
 import { PostureNotification } from "@/components/posture-reminder/posture-notification";
 import { PainLogChart } from "@/components/posture-reminder/pain-log-chart";
@@ -65,7 +65,7 @@ export function PostureDashboard() {
         .join(" ");
     }
   }
-
+  useEffect(() => {});
   return (
     <div className="container mx-auto p-4">
       <div className="mb-6 flex items-center justify-between">

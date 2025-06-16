@@ -4,6 +4,7 @@ import { HabitTracker } from "@/components/habits/habit-tracker";
 import { db } from "@/lib/db";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getHabits, getUserCoins } from "@/actions/habit";
 
 export default async function HabitsPage() {
   const { userId } = await auth();
@@ -19,12 +20,8 @@ export default async function HabitsPage() {
   });
 
   const features = (user?.features as Record<string, boolean>) || {};
-
-  // Optional: Redirect if feature not enabled
-  // if (!features.habit_tracker) {
-  //   redirect("/dashboard");
-  // }
-
+  const habitsData = await getHabits();
+  const coinsData = await getUserCoins();
   return (
     <Suspense
       fallback={

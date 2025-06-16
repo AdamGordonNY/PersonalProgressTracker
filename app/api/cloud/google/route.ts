@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getUserCloudTokens } from "@/actions/user";
+
 import {
   initializeGoogleDrive,
   listGoogleDriveFiles,
@@ -21,11 +21,6 @@ export async function GET(request: Request) {
 
     if (!allowed) {
       return new NextResponse("Too many requests", { status: 429 });
-    }
-
-    const tokens = await getUserCloudTokens(userId);
-    if (!tokens?.google) {
-      return new NextResponse("Google Drive not connected", { status: 403 });
     }
 
     const drive = initializeGoogleDrive();

@@ -1,6 +1,6 @@
 import { Client } from "@microsoft/microsoft-graph-client";
 import { auth } from "@clerk/nextjs/server";
-import { getMicrosoftTokens } from "@/lib/auth";
+import { getMicrosoftTokens } from "@/lib/tokens";
 import { TokenCredentialAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials";
 import { NextResponse } from "next/server";
 
